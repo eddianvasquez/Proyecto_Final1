@@ -121,3 +121,27 @@ function updateQuantity(name, change) {
         updateCartUI();
     }
 }
+
+    document.addEventListener('DOMContentLoaded', function() {
+                const cartBtn = document.getElementById('cart-btn');
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const closeCartBtn = document.getElementById('close-cart');
+    const cartOverlay = document.getElementById('cart-overlay');
+
+    cartBtn.addEventListener('click', function() {
+        cartSidebar.classList.remove('translate-x-full');
+    cartSidebar.classList.add('translate-x-0');
+    cartOverlay.classList.remove('hidden');
+                });
+
+    function closeCart() {
+        cartSidebar.classList.remove('translate-x-0');
+    cartSidebar.classList.add('translate-x-full');
+    cartOverlay.classList.add('hidden');
+                }
+
+    closeCartBtn.addEventListener('click', closeCart);
+    cartOverlay.addEventListener('click', closeCart);
+            });
+
+
