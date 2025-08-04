@@ -12,8 +12,8 @@ using Proyecto_Final1.Data;
 namespace Proyecto_Final1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250804195559_Inicial")]
-    partial class Inicial
+    [Migration("20250804203523_añadiendoroles")]
+    partial class añadiendoroles
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -198,6 +198,7 @@ namespace Proyecto_Final1.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PrecioUnitario")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductoId")
@@ -314,6 +315,7 @@ namespace Proyecto_Final1.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PrecioUnitario")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductoId")
@@ -347,6 +349,7 @@ namespace Proyecto_Final1.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("UsuarioId")
@@ -383,6 +386,7 @@ namespace Proyecto_Final1.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Precio")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Stock")
@@ -406,6 +410,7 @@ namespace Proyecto_Final1.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("PrecioAdicional")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductoId")
@@ -603,7 +608,7 @@ namespace Proyecto_Final1.Migrations
                     b.HasOne("Proyecto_Final1.Usuarios.DireccionDeEnvio", "DireccionDeEnvio")
                         .WithMany()
                         .HasForeignKey("DireccionDeEnvioId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Proyecto_Final1.Data.ApplicationUser", "Usuario")

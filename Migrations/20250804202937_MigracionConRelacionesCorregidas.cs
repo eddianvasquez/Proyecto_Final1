@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Proyecto_Final1.Migrations
 {
     /// <inheritdoc />
-    public partial class Inicial : Migration
+    public partial class MigracionConRelacionesCorregidas : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -64,7 +64,7 @@ namespace Proyecto_Final1.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     ImagenUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Stock = table.Column<int>(type: "int", nullable: false)
                 },
@@ -234,7 +234,7 @@ namespace Proyecto_Final1.Migrations
                     ProductoId = table.Column<int>(type: "int", nullable: false),
                     NombreVariacion = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ValorVariacion = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PrecioAdicional = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    PrecioAdicional = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -285,7 +285,7 @@ namespace Proyecto_Final1.Migrations
                     CarritoId = table.Column<int>(type: "int", nullable: false),
                     ProductoId = table.Column<int>(type: "int", nullable: false),
                     Cantidad = table.Column<int>(type: "int", nullable: false),
-                    PrecioUnitario = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    PrecioUnitario = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -312,7 +312,7 @@ namespace Proyecto_Final1.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UsuarioId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FechaPedido = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Estado = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DireccionDeEnvioId = table.Column<int>(type: "int", nullable: false)
                 },
@@ -330,7 +330,7 @@ namespace Proyecto_Final1.Migrations
                         column: x => x.DireccionDeEnvioId,
                         principalTable: "DireccionesDeEnvio",
                         principalColumn: "DireccionId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -342,7 +342,7 @@ namespace Proyecto_Final1.Migrations
                     PedidoId = table.Column<int>(type: "int", nullable: false),
                     ProductoId = table.Column<int>(type: "int", nullable: false),
                     Cantidad = table.Column<int>(type: "int", nullable: false),
-                    PrecioUnitario = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    PrecioUnitario = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
