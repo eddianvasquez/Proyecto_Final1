@@ -26,39 +26,71 @@ namespace Proyecto_Final1.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             base.OnModelCreating(modelBuilder);
 
-            // --- Solución para el error de "multiple cascade paths" ---
-            // 1. Configura la relación entre Pedido y DireccionDeEnvio para NO CASCADE.
-            // Esto significa que si se elimina una DirecciónDeEnvio, los Pedidos asociados NO se eliminarán automáticamente.
             modelBuilder.Entity<Pedido>()
                 .HasOne(p => p.DireccionDeEnvio)
                 .WithMany() // Asumiendo que DireccionDeEnvio no tiene una colección de Pedidos
                 .HasForeignKey(p => p.DireccionDeEnvioId)
-                .OnDelete(DeleteBehavior.NoAction); // <-- ¡Esta es una parte clave!
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 2. Configura la relación entre DireccionDeEnvio y ApplicationUser para NO CASCADE.
-            // Esto significa que si se elimina un ApplicationUser, sus DireccionesDeEnvio NO se eliminarán automáticamente.
-            // Esta es la segunda parte clave para romper el ciclo de eliminación en cascada.
-            // Tendrás que manejar la eliminación de direcciones manualmente si un usuario se borra.
-            modelBuilder.Entity<DireccionDeEnvio>()
-                .HasOne(d => d.Usuario)
-                .WithMany() // Asumiendo que ApplicationUser no tiene una colección de DireccionesDeEnvio
-                .HasForeignKey(d => d.UsuarioId)
-                .OnDelete(DeleteBehavior.NoAction); // <-- ¡Esta es la otra parte clave!
-
-            // La relación entre Pedido y ApplicationUser puede mantener CASCADE,
-            // ya que no forma parte del ciclo problemático con DireccionDeEnvio.
-            // Si un ApplicationUser se elimina, sus Pedidos asociados sí se eliminarán.
+            // 2. Configura la relación entre Pedido y ApplicationUser.
+            // Es lógico que si un usuario se elimina, sus pedidos también se eliminen.
+            // Aquí mantenemos el comportamiento por defecto de cascada, pero lo explicitamos.
             modelBuilder.Entity<Pedido>()
                 .HasOne(p => p.Usuario)
-                .WithMany()
+                .WithMany(u => u.Pedidos)
                 .HasForeignKey(p => p.UsuarioId)
-                .OnDelete(DeleteBehavior.Cascade); // Comportamiento por defecto, explícito para claridad
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // --- Solución para las advertencias de propiedades decimales ---
-            // Especifica la precisión y escala para todas las propiedades decimales.
-            // Un valor común para moneda es (18, 2), que significa 18 dígitos en total, con 2 después del punto decimal.
+            // 3. Configura la relación entre DireccionDeEnvio y ApplicationUser.
+            // Es lógico que si un usuario se elimina, sus direcciones de envío también se eliminen.
+            // Aquí también se mantiene el comportamiento por defecto de cascada, pero lo explicitamos.
+            modelBuilder.Entity<DireccionDeEnvio>()
+                .HasOne(d => d.Usuario)
+                .WithMany(u => u.DireccionesDeEnvio)
+                .HasForeignKey(d => d.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Nota: Con las configuraciones 1 y 2, el ciclo ya está roto.
+            // No hay riesgo de conflicto porque la única relación que ahora usa
+            // 'Restrict' es la que va de Pedido a DireccionDeEnvio.
+            // El resto de las relaciones padre-hijo (User -> Pedidos, User -> Direcciones)
+            // pueden usar 'Cascade' sin problema.
+
+            // --- CONFIGURACIÓN DE OTRAS RELACIONES CON ELIMINACIÓN EN CASCADA ---
+            // Estas relaciones no causan problemas porque no forman ciclos.
+
+            // Un CarritoItem es un 'hijo' de un Carrito.
+            modelBuilder.Entity<CarritoItem>()
+                .HasOne(ci => ci.Carrito)
+                .WithMany(c => c.Items)
+                .HasForeignKey(ci => ci.CarritoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Un Carrito es un 'hijo' de un ApplicationUser.
+            modelBuilder.Entity<Carrito>()
+                .HasOne(c => c.Usuario)
+                .WithMany(u => u.Carritos)
+                .HasForeignKey(c => c.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Un DetallePedidos es un 'hijo' de un Pedido.
+            modelBuilder.Entity<DetallePedidos>()
+                .HasOne(dp => dp.Pedido)
+                .WithMany(p => p.Detalles)
+                .HasForeignKey(dp => dp.PedidoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Una Valoracion es un 'hijo' de un ApplicationUser.
+            modelBuilder.Entity<Valoracion>()
+                .HasOne(v => v.Usuario)
+                .WithMany(u => u.Valoraciones)
+                .HasForeignKey(v => v.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // --- SOLUCIÓN PARA LAS ADVERTENCIAS DE PROPIEDADES DECIMALES ---
             modelBuilder.Entity<CarritoItem>()
                 .Property(ci => ci.PrecioUnitario)
                 .HasPrecision(18, 2);
@@ -78,8 +110,6 @@ namespace Proyecto_Final1.Data
             modelBuilder.Entity<ProductoVariacion>()
                 .Property(pv => pv.PrecioAdicional)
                 .HasPrecision(18, 2);
-
-            // Aquí puedes agregar configuraciones adicionales para el modelo si es necesario.
         }
     }
 }
