@@ -1,0 +1,89 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<section class="hero-section flex items-center justify-center text-white">
+    <div class="text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Verduras Frescas & Orgánicas</h1>
+        <p class="text-xl mb-6">Directo del campo a tu mesa</p>
+        <a href="#products" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md inline-block transition">Ver productos</a>
+    </div>
+</section>
+
+<main class="container mx-auto px-4 py-12">
+    <section id="products" class="mb-16">
+        <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Nuestros Productos</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div class="veg-card bg-white rounded-lg overflow-hidden shadow-md">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e9cb6d70-29f5-4ff7-aa39-5b6329746262.png" alt="Fresco tomate rojo maduro con gotas de agua sobre fondo claro" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Tomates Orgánicos</h3>
+                    <p class="text-gray-600 mb-3">Cultivados al sol, ricos en sabor y nutrientes.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold text-green-700">$1.99/lb</span>
+                        <button onclick="addToCart('Tomates Orgánicos', 1.99, 'https://placehold.co/100x100')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition">Añadir</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="veg-card bg-white rounded-lg overflow-hidden shadow-md">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/c2d46b47-9315-4ede-aaf9-aeef9ee554c9.png" alt="Zanahorias frescas recién cosechadas con tierra y hojas verdes" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Zanahorias Frescas</h3>
+                    <p class="text-gray-600 mb-3">Dulces, crujientes y llenas de vitamina A.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold text-green-700">$0.99/lb</span>
+                        <button onclick="addToCart('Zanahorias Frescas', 0.99, 'https://placehold.co/100x100')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition">Añadir</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="veg-card bg-white rounded-lg overflow-hidden shadow-md">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/87f1c62f-331d-492e-8f3e-2ded34dc1822.png" alt="Lechuga romana verde fresco con rocío de agua sobre hojas crujientes" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Lechuga Romana</h3>
+                    <p class="text-gray-600 mb-3">Crujiente y perfecta para ensaladas frescas.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold text-green-700">$1.49/unidad</span>
+                        <button onclick="addToCart('Lechuga Romana', 1.49, 'https://placehold.co/100x100')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition">Añadir</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="veg-card bg-white rounded-lg overflow-hidden shadow-md">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/abeb2fef-a54d-44c2-aa03-c71ea6e61ae3.png" alt="Pimientos rojos brillantes y amarillos sobre cesta de mimbre" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Pimientos Variados</h3>
+                    <p class="text-gray-600 mb-3">Coloridos y llenos de sabor para tus comidas.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold text-green-700">$2.49/lb</span>
+                        <button onclick="addToCart('Pimientos Variados', 2.49, 'https://placehold.co/100x100')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition">Añadir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="mb-16 bg-green-50 p-8 rounded-lg">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Nuestra Filosofía</h2>
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+                <p class="text-gray-700 mb-4">En Mercado Orgánico creemos en la agricultura sostenible y en llevar los productos más frescos directamente desde nuestros campos a tu hogar.</p>
+                <p class="text-gray-700 mb-4">Trabajamos con pequeños agricultores locales que comparten nuestra pasión por la calidad y el respeto al medio ambiente.</p>
+                <p class="text-gray-700">Cada producto es seleccionado cuidadosamente para garantizar la máxima frescura y sabor.</p>
+            </div>
+            <div class="rounded-lg overflow-hidden shadow-md">
+                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b90c8610-c801-4074-a61b-93a47d7e84d9.png" alt="Granja orgánica con cultivos de vegetales bajo el sol con montañas al fondo" class="w-full" />
+            </div>
+        </div>
+    </section>
+</main>
