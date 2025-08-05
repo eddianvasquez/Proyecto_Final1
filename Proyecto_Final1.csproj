@@ -26,4 +26,10 @@
     <PackageReference Include="MudBlazor" Version="8.10.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Components\Pages\VegetalesPages\Carrito\" />
+    <Folder Include="Components\Pages\VegetalesPages\Admin\" />
+    <Folder Include="Components\Pages\VegetalesPages\Productos\" />
+  </ItemGroup>
+
 </Project>
