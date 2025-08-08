@@ -10,6 +10,7 @@ using Proyecto_Final1.Productos;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -33,6 +34,7 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -44,7 +46,7 @@ else
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
@@ -52,14 +54,15 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
-app.MapBlazorHub();
+// Esta línea de código es la que causa el conflicto, la eliminamos o la comentamos.
+// app.MapBlazorHub();
 
-app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapAdditionalIdentityEndpoints();
 
+// Lógica para inicializar la base de datos y los datos de ejemplo
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
