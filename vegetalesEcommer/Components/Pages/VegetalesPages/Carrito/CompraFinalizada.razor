@@ -1,0 +1,93 @@
+﻿@page "/CompraFinalizada"
+
+<PageTitle>Compra Finalizada - Mercado Orgánico</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 text-center bg-white rounded-lg shadow-xl p-8">
+        <div class="mb-6">
+            <i class="fas fa-check-circle text-6xl text-green-500 mb-4 animate-bounce-in"></i>
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">¡Compra Realizada con Éxito!</h1>
+            <p class="text-lg text-gray-600">Gracias por tu compra en Mercado Orgánico.</p>
+        </div>
+
+        <div class="border-t border-b border-gray-200 py-6 my-6 space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800">Estado de tu Pedido</h2>
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <p class="text-gray-700 text-xl font-semibold">
+                    <i class="fas @(GetStatusIcon(OrderStatus)) mr-2 @(GetStatusColor(OrderStatus))"></i>
+                    @GetStatusText(OrderStatus)
+                </p>
+                <p class="text-sm text-gray-500">
+                    Tu número de pedido es: <span class="font-bold text-gray-700">#MERCADO-@OrderId</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Detalles del Proceso</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-blue-50 p-4 rounded-md shadow-sm">
+                    <i class="fas fa-truck-loading text-blue-600 text-3xl mb-2"></i>
+                    <p class="font-semibold text-gray-800">Preparación</p>
+                    <p class="text-sm text-gray-600">Tu pedido está siendo cuidadosamente preparado para el envío.</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-md shadow-sm">
+                    <i class="fas fa-shipping-fast text-yellow-600 text-3xl mb-2"></i>
+                    <p class="font-semibold text-gray-800">En Camino</p>
+                    <p class="text-sm text-gray-600">Ha salido de nuestro almacén y está en ruta hacia ti.</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-md shadow-sm">
+                    <i class="fas fa-box-open text-green-600 text-3xl mb-2"></i>
+                    <p class="font-semibold text-gray-800">Entregado</p>
+                    <p class="text-sm text-gray-600">¡Tu compra ha sido entregada exitosamente!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-10">
+            <a href="/" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition transform hover:scale-105">
+                <i class="fas fa-home mr-2"></i>
+                Volver a la Tienda
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int OrderId { get; set; }
+    private string OrderStatus { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        
+        OrderId = new Random().Next(100000, 999999);
+
+        
+        string[] statuses = { "pending", "in_transit", "delivered" };
+        OrderStatus = statuses[new Random().Next(statuses.Length)];
+    }
+
+    private string GetStatusText(string status) => status switch
+    {
+        "pending" => "Tu pedido aún no ha salido",
+        "in_transit" => "Tu pedido está en camino",
+        "delivered" => "Tu pedido ha sido entregado",
+        _ => "Estado desconocido"
+    };
+
+    private string GetStatusIcon(string status) => status switch
+    {
+        "pending" => "fa-hourglass-start",
+        "in_transit" => "fa-truck",
+        "delivered" => "fa-box-open",
+        _ => "fa-question-circle"
+    };
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "pending" => "text-yellow-600",
+        "in_transit" => "text-blue-600",
+        "delivered" => "text-green-600",
+        _ => "text-gray-500"
+    };
+}

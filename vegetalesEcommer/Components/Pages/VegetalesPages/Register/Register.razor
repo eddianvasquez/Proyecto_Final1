@@ -23,7 +23,7 @@
 
 <div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
-        <!-- Header -->
+       
         <div class="text-center">
             <div class="flex justify-center items-center space-x-2 mb-4">
                 <i class="fas fa-leaf text-4xl text-green-600"></i>
@@ -35,7 +35,7 @@
             </p>
         </div>
 
-        <!-- Register Form -->
+        
         <div class="bg-white rounded-lg shadow-lg p-8">
             @if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -54,7 +54,7 @@
                 <DataAnnotationsValidator />
                 <ValidationSummary class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm" role="alert" />
 
-                <!-- Nombre Field -->
+                
                 <div class="space-y-2">
                     <label for="Input.Nombre" class="block text-sm font-medium text-gray-700">
                         <i class="fas fa-user text-green-600 mr-2"></i>Nombre
@@ -67,7 +67,7 @@
                     <ValidationMessage For="() => Input.Nombre" class="text-red-600 text-sm" />
                 </div>
 
-                <!-- Apellido Field -->
+                
                 <div class="space-y-2">
                     <label for="Input.Apellido" class="block text-sm font-medium text-gray-700">
                         <i class="fas fa-user text-green-600 mr-2"></i>Apellido
@@ -80,7 +80,7 @@
                     <ValidationMessage For="() => Input.Apellido" class="text-red-600 text-sm" />
                 </div>
 
-                <!-- Email Field -->
+                
                 <div class="space-y-2">
                     <label for="Input.Email" class="block text-sm font-medium text-gray-700">
                         <i class="fas fa-envelope text-green-600 mr-2"></i>Correo Electrónico
@@ -94,7 +94,7 @@
                     <ValidationMessage For="() => Input.Email" class="text-red-600 text-sm" />
                 </div>
 
-                <!-- Password Field -->
+                
                 <div class="space-y-2">
                     <label for="Input.Password" class="block text-sm font-medium text-gray-700">
                         <i class="fas fa-lock text-green-600 mr-2"></i>Contraseña
@@ -109,7 +109,7 @@
                     <ValidationMessage For="() => Input.Password" class="text-red-600 text-sm" />
                 </div>
 
-                <!-- Confirm Password Field -->
+                
                 <div class="space-y-2">
                     <label for="Input.ConfirmPassword" class="block text-sm font-medium text-gray-700">
                         <i class="fas fa-lock text-green-600 mr-2"></i>Confirmar Contraseña
@@ -124,7 +124,7 @@
                     <ValidationMessage For="() => Input.ConfirmPassword" class="text-red-600 text-sm" />
                 </div>
 
-                <!-- Submit Button -->
+                
                 <div>
                     <button type="submit"
                             class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
@@ -135,7 +135,7 @@
                     </button>
                 </div>
 
-                <!-- Links -->
+                
                 <div class="text-center space-y-2">
                     <div>
                         <a href="Account/Login"
@@ -159,7 +159,7 @@
             </EditForm>
         </div>
 
-        <!-- Back to Home -->
+        
         <div class="text-center">
             <a href="/"
                class="inline-flex items-center text-sm text-gray-600 hover:text-green-600 transition">
@@ -194,7 +194,7 @@
 
             user.Nombre = Input.Nombre;
             user.Apellido = Input.Apellido;
-            user.UserName = Input.Email; // Set UserName to be the same as Email
+            user.UserName = Input.Email; 
 
             await UserManager.SetEmailAsync(user, Input.Email);
 
@@ -204,8 +204,7 @@
             {
                 Logger.LogInformation("User created a new account with password.");
 
-                // Add role to the user, this is based on the second example
-                // Note: Make sure the role "Cliente" exists in your database.
+                
                 if (await UserManager.IsInRoleAsync(user, "Cliente") == false)
                 {
                     await UserManager.AddToRoleAsync(user, "Cliente");
@@ -213,9 +212,9 @@
                 }
 
                 successMessage = "¡Tu cuenta ha sido creada con éxito! Puedes registrar otro usuario.";
-                // Resetea el formulario para que se puedan registrar más usuarios.
+                
                 Input = new();
-                StateHasChanged(); // Forzar la actualización del componente
+                StateHasChanged(); 
             }
             else
             {

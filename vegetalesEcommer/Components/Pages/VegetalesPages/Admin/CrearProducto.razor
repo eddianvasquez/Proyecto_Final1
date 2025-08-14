@@ -1,0 +1,417 @@
+﻿@page "/admin/CrearProducto"
+
+@using System.ComponentModel.DataAnnotations
+@using System.IO 
+@using Microsoft.AspNetCore.Components.Forms 
+@using Microsoft.AspNetCore.Hosting 
+@using Proyecto_Final1.Data 
+@using Proyecto_Final1.Productos
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization 
+@using Microsoft.AspNetCore.Identity 
+
+@attribute [Authorize(Roles = "Admin")] 
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject ILogger<CrearProducto> Logger
+@inject IWebHostEnvironment WebHostEnvironment // Inyectar para acceder a wwwroot
+
+<PageTitle>Crear Nuevo Producto - Mercado Orgánico</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl w-full space-y-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex justify-center items-center space-x-2 mb-4">
+                <i class="fas fa-plus-circle text-4xl text-green-600"></i>
+                <span class="text-2xl font-bold text-green-700">Mercado Orgánico</span>
+            </div>
+            <h1 class="text-3xl font-extrabold text-gray-900">Crear Nuevo Producto</h1>
+            <p class="mt-2 text-sm text-gray-600">
+                Introduce los detalles de tu nuevo producto, incluyendo sus variaciones.
+            </p>
+        </div>
+
+        
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+                <i class="fas fa-check-circle mr-2"></i>@successMessage
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+                <i class="fas fa-exclamation-circle mr-2"></i>@errorMessage
+            </div>
+        }
+
+        
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <EditForm Model="productInput" OnValidSubmit="HandleValidSubmit" FormName="createProduct" class="space-y-8">
+                <DataAnnotationsValidator />
+
+                
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-info-circle text-green-600 mr-2"></i>Información Básica
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label for="productInput.Nombre" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                            <InputText id="productInput.Nombre" @bind-Value="productInput.Nombre"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                            <ValidationMessage For="() => productInput.Nombre" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="productInput.Precio" class="block text-sm font-medium text-gray-700">Precio</label>
+                            <InputNumber id="productInput.Precio" @bind-Value="productInput.Precio"
+                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                            <ValidationMessage For="() => productInput.Precio" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label for="productInput.Descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <InputTextArea id="productInput.Descripcion" @bind-Value="productInput.Descripcion" rows="4"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                            <ValidationMessage For="() => productInput.Descripcion" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="imageUpload" class="block text-sm font-medium text-gray-700">Subir Imagen</label>
+                            <InputFile id="imageUpload" OnChange="HandleFileChange" class="w-full" />
+                            @if (!string.IsNullOrEmpty(productInput.ImagenUrl))
+                            {
+                                <p class="text-sm text-gray-500 mt-1">Imagen seleccionada: <span class="font-medium">@Path.GetFileName(productInput.ImagenUrl)</span></p>
+                                <img src="@productInput.ImagenUrl" alt="Previsualización del producto" class="mt-2 h-24 w-24 object-cover rounded-md shadow" />
+                            }
+                            <ValidationMessage For="() => productInput.ImagenUrl" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="productInput.Stock" class="block text-sm font-medium text-gray-700">Stock Disponible</label>
+                            <InputNumber id="productInput.Stock" @bind-Value="productInput.Stock"
+                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                            <ValidationMessage For="() => productInput.Stock" class="text-red-600 text-sm" />
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-seedling text-green-600 mr-2"></i>Detalles de Vegetales
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label for="productInput.Categoria" class="block text-sm font-medium text-gray-700">Categoría</label>
+                            <InputText id="productInput.Categoria" @bind-Value="productInput.Categoria"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                       placeholder="Ej: Hortaliza, Fruta, Raíz" />
+                            <ValidationMessage For="() => productInput.Categoria" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="productInput.Origen" class="block text-sm font-medium text-gray-700">Origen</label>
+                            <InputText id="productInput.Origen" @bind-Value="productInput.Origen"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                       placeholder="Ej: Granja Local, Importado" />
+                            <ValidationMessage For="() => productInput.Origen" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="productInput.UnidadDeMedida" class="block text-sm font-medium text-gray-700">Unidad de Medida</label>
+                            <InputText id="productInput.UnidadDeMedida" @bind-Value="productInput.UnidadDeMedida"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                       placeholder="Ej: kg, unidad, manojo" />
+                            <ValidationMessage For="() => productInput.UnidadDeMedida" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="productInput.Temporada" class="block text-sm font-medium text-gray-700">Temporada</label>
+                            <InputText id="productInput.Temporada" @bind-Value="productInput.Temporada"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                       placeholder="Ej: Todo el año, Primavera" />
+                            <ValidationMessage For="() => productInput.Temporada" class="text-red-600 text-sm" />
+                        </div>
+                        <div class="flex items-center mt-2 col-span-2">
+                            <InputCheckbox id="productInput.EsOrganicoCertificado" @bind-Value="productInput.EsOrganicoCertificado"
+                                           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                            <label for="productInput.EsOrganicoCertificado" class="ml-2 block text-sm font-medium text-gray-700">
+                                <i class="fas fa-award text-yellow-500 mr-1"></i>Orgánico Certificado
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-between">
+                        <span><i class="fas fa-tags text-green-600 mr-2"></i>Variaciones del Producto</span>
+                        <button type="button" @onclick="AddVariation"
+                                class="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition">
+                            <i class="fas fa-plus mr-1"></i>Añadir Variación
+                        </button>
+                    </h2>
+
+                    @if (productInput.Variaciones.Any())
+                    {
+                        <div class="space-y-4">
+                            @foreach (var variation in productInput.Variaciones)
+                            {
+                                <div class="p-4 border border-gray-200 rounded-md bg-gray-50 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                    <div class="space-y-2">
+                                        <label for="variation.NombreVariacion" class="block text-sm font-medium text-gray-700">Nombre (ej. Tipo)</label>
+                                        <InputText @bind-Value="variation.NombreVariacion"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                                                   placeholder="Ej: Color, Madurez" />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label for="variation.ValorVariacion" class="block text-sm font-medium text-gray-700">Valor (ej. Rojo, Verde, Maduro)</label>
+                                        <InputText @bind-Value="variation.ValorVariacion"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                                                   placeholder="Ej: Liso, Rizado" />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label for="variation.PrecioAdicional" class="block text-sm font-medium text-gray-700">Precio Adicional</label>
+                                        <InputNumber @bind-Value="variation.PrecioAdicional"
+                                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button type="button" @onclick="() => RemoveVariation(variation)"
+                                                class="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition">
+                                            <i class="fas fa-times mr-1"></i>Eliminar
+                                        </button>
+                                    </div>
+                                   
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-gray-500 text-sm">No hay variaciones añadidas. Haz clic en "Añadir Variación" para empezar.</p>
+                    }
+                </div>
+
+               
+                <div>
+                    <button type="submit"
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <i class="fas fa-save text-green-500 group-hover:text-green-400"></i>
+                        </span>
+                        Guardar Producto
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+
+        
+        <div class="text-center mt-8">
+            <a href="/productos"
+               class="inline-flex items-center text-sm text-gray-600 hover:text-green-600 transition">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Volver a la lista de productos
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    
+    private InputModel productInput = new();
+    private IBrowserFile? selectedImageFile;
+
+   
+    private string? successMessage;
+    private string? errorMessage;
+
+    
+    private class InputModel
+    {
+        [Required(ErrorMessage = "El nombre del producto es obligatorio.")]
+        [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
+        public string Nombre { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
+        public string Descripcion { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El precio es obligatorio.")]
+        [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "El precio debe ser mayor que cero.")] 
+        public decimal Precio { get; set; }
+
+        
+        [Required(ErrorMessage = "La imagen es obligatoria.")]
+        public string ImagenUrl { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El stock es obligatorio.")]
+        [Range(0, int.MaxValue, ErrorMessage = "El stock no puede ser negativo.")]
+        public int Stock { get; set; }
+
+        
+        [Required(ErrorMessage = "La categoría es obligatoria.")]
+        public string Categoria { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El origen es obligatorio.")]
+        public string Origen { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La unidad de medida es obligatoria.")]
+        public string UnidadDeMedida { get; set; } = string.Empty;
+
+        public bool EsOrganicoCertificado { get; set; }
+
+        public string? Temporada { get; set; } 
+
+        public List<VariacionInputModel> Variaciones { get; set; } = new();
+    }
+
+    
+    private class VariacionInputModel
+    {
+        [Required(ErrorMessage = "El nombre de la variación es obligatorio.")]
+        public string NombreVariacion { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El valor de la variación es obligatorio.")]
+        public string ValorVariacion { get; set; } = string.Empty;
+
+        [Range(0, double.MaxValue, ErrorMessage = "El precio adicional no puede ser negativo.")]
+        public decimal PrecioAdicional { get; set; }
+    }
+
+    
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
+    {
+        errorMessage = null; 
+        successMessage = null; 
+
+        selectedImageFile = e.File;
+
+        
+        if (selectedImageFile.Size > 5 * 1024 * 1024)
+        {
+            errorMessage = "El archivo de imagen es demasiado grande (máx 5MB).";
+            selectedImageFile = null; 
+            return;
+        }
+
+        
+        if (!selectedImageFile.ContentType.StartsWith("image/"))
+        {
+            errorMessage = "Solo se permiten archivos de imagen.";
+            selectedImageFile = null; 
+            return;
+        }
+
+       
+        productInput.ImagenUrl = selectedImageFile.Name; 
+    }
+
+    
+    private void AddVariation()
+    {
+        productInput.Variaciones.Add(new VariacionInputModel());
+    }
+
+    
+    private void RemoveVariation(VariacionInputModel variation)
+    {
+        productInput.Variaciones.Remove(variation);
+    }
+
+    
+    private async Task HandleValidSubmit()
+    {
+        successMessage = null;
+        errorMessage = null;
+
+        if (selectedImageFile == null)
+        {
+            errorMessage = "Debes seleccionar una imagen para el producto.";
+            return;
+        }
+
+        try
+        {
+            
+            var uploadsFolder = Path.Combine(WebHostEnvironment.WebRootPath, "images", "productos");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + selectedImageFile.Name;
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await selectedImageFile.OpenReadStream(selectedImageFile.Size).CopyToAsync(stream);
+            }
+
+            
+            productInput.ImagenUrl = $"/images/productos/{uniqueFileName}";
+
+            
+            var nuevoProducto = new Producto
+                {
+                    Nombre = productInput.Nombre,
+                    Descripcion = productInput.Descripcion,
+                    Precio = productInput.Precio,
+                    ImagenUrl = productInput.ImagenUrl, 
+                    Stock = productInput.Stock,
+                    Categoria = productInput.Categoria, 
+                    Origen = productInput.Origen,
+                    UnidadDeMedida = productInput.UnidadDeMedida,
+                    EsOrganicoCertificado = productInput.EsOrganicoCertificado,
+                    Temporada = productInput.Temporada,
+                    Variaciones = new List<ProductoVariacion>(),
+                    Valoraciones = new List<Valoracion>()
+                };
+
+           
+            foreach (var variacionInput in productInput.Variaciones)
+            {
+               
+                if (string.IsNullOrWhiteSpace(variacionInput.NombreVariacion) ||
+                    string.IsNullOrWhiteSpace(variacionInput.ValorVariacion))
+                {
+                    
+                    errorMessage = "Todas las variaciones deben tener Nombre y Valor.";
+                    
+                    selectedImageFile = null;
+                    return;
+                }
+
+                nuevoProducto.Variaciones.Add(new ProductoVariacion
+                    {
+                        NombreVariacion = variacionInput.NombreVariacion,
+                        ValorVariacion = variacionInput.ValorVariacion,
+                        PrecioAdicional = variacionInput.PrecioAdicional
+                    });
+            }
+
+            await DbContext.Productos.AddAsync(nuevoProducto);
+            await DbContext.SaveChangesAsync();
+
+            successMessage = $"Producto '{nuevoProducto.Nombre}' creado exitosamente con ID: {nuevoProducto.ProductoId}.";
+            Logger.LogInformation("Producto creado: {ProductName}", nuevoProducto.Nombre);
+
+            
+            productInput = new InputModel();
+            selectedImageFile = null; 
+            StateHasChanged(); 
+
+          
+        }
+        catch (DbUpdateException ex)
+        {
+            errorMessage = "Error al guardar el producto en la base de datos. Asegúrate de que todos los campos son válidos y únicos si es necesario.";
+            Logger.LogError(ex, "Error al guardar el producto en la base de datos: {ExMessage}", ex.Message);
+        }
+        catch (IOException ex)
+        {
+            errorMessage = "Error al guardar el archivo de imagen. Verifica los permisos del servidor.";
+            Logger.LogError(ex, "Error de E/S al guardar la imagen.");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error inesperado al crear el producto.";
+            Logger.LogError(ex, "Error inesperado al crear el producto: {ExMessage}", ex.Message);
+        }
+    }
+}

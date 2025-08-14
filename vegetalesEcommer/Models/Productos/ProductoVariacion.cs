@@ -11,7 +11,7 @@ namespace Proyecto_Final1.Productos
         public string ValorVariacion { get; set; }
         public decimal PrecioAdicional { get; set; }
 
-        // Propiedad de navegación
+        
         public virtual Producto Producto { get; set; }
     }
 }

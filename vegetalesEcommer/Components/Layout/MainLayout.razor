@@ -5,7 +5,6 @@
 @inject NavigationManager NavManager
 @inject IdentityRedirectManager RedirectManager
 
-
 <nav class="bg-white shadow-md sticky top-0 z-50">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
@@ -16,12 +15,42 @@
         </div>
 
         <div class="hidden md:flex items-center space-x-6">
-            <NavLink href="/productos" class="text-gray-700 hover:text-green-600 transition-colors" Match="NavLinkMatch.All">Productos</NavLink>
+            <!-- Botón de Inicio añadido -->
+            <NavLink href="/" class="text-gray-700 hover:text-green-600 transition-colors" Match="NavLinkMatch.All">Inicio</NavLink>
+            <NavLink href="/productos" class="text-gray-700 hover:text-green-600 transition-colors">Productos</NavLink>
             <NavLink href="/nosotros" class="text-gray-700 hover:text-green-600 transition-colors">Nosotros</NavLink>
             <NavLink href="/contacto" class="text-gray-700 hover:text-green-600 transition-colors">Contacto</NavLink>
         </div>
 
         <div class="flex items-center space-x-4">
+            <!-- Lógica de menú de administrador para el rol 'Admin' -->
+            <AuthorizeView Roles="Admin">
+                <div class="relative">
+                    <button @onclick="ToggleAdminMenu" class="text-green-700 hover:text-green-600 focus:outline-none transition-colors p-2">
+                        <!-- Ícono de hoja de "ojita" -->
+                        <i class="fas fa-leaf text-xl"></i>
+                    </button>
+                    @if (showAdminMenu)
+                    {
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <!-- Links a las páginas de administrador -->
+                            <NavLink href="/admin/CrearProducto" @onclick="ToggleAdminMenu"
+                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                Crear Producto
+                            </NavLink>
+                            <NavLink href="/admin/EditarProducto" @onclick="ToggleAdminMenu"
+                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                Administrar Productos
+                            </NavLink>
+                            <NavLink href="/admin/reporte-ventas" @onclick="ToggleAdminMenu"
+                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                Reporte de Ventas
+                            </NavLink>
+                        </div>
+                    }
+                </div>
+            </AuthorizeView>
+
             <AuthorizeView>
                 <Authorized>
                     <NavLink href="/perfil" class="p-2 text-gray-700 hover:text-green-600 transition-colors">
@@ -44,7 +73,9 @@
 
             <NavLink href="/carrito" class="relative p-2 text-gray-700 hover:text-green-600 transition-colors">
                 <i class="fas fa-shopping-cart text-xl"></i>
-                <span id="cart-count" class="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                <span id="cart-count" class="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    @cartCount
+                </span>
             </NavLink>
 
             <button class="md:hidden p-2 text-gray-700 hover:text-green-600 transition-colors" @onclick="ToggleMobileMenu">
@@ -57,6 +88,7 @@
     {
         <div class="md:hidden bg-white shadow-lg py-4">
             <div class="flex flex-col items-center space-y-4">
+                <NavLink href="/" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Inicio</NavLink>
                 <NavLink href="/productos" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Productos</NavLink>
                 <NavLink href="/nosotros" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Nosotros</NavLink>
                 <NavLink href="/contacto" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Contacto</NavLink>
@@ -101,9 +133,25 @@
 
 @code {
     private bool showMobileMenu = false;
+    private bool showAdminMenu = false; // Agregado para el menú de admin
+    private int cartCount = 0; // Propiedad para el contador del carrito
+
+    protected override void OnInitialized()
+    {
+        // En una aplicación real, aquí obtendrías el número de artículos del carrito
+        // desde un servicio de estado o una base de datos.
+        // Por ejemplo: cartCount = CarritoService.GetItemsCount();
+        cartCount = 3; // Valor de ejemplo para mostrar la funcionalidad
+    }
 
     private void ToggleMobileMenu()
     {
         showMobileMenu = !showMobileMenu;
+    }
+
+    // Método agregado para el menú de administrador
+    private void ToggleAdminMenu()
+    {
+        showAdminMenu = !showAdminMenu;
     }
 }

@@ -1,0 +1,167 @@
+﻿@page "/Carrito"
+
+@using System.Collections.Generic
+@using System.Linq
+@using System.Threading.Tasks
+@using Microsoft.JSInterop
+@using Proyecto_Final1.Services 
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject CartService CartService // Inject the shared CartService
+@implements IDisposable 
+
+<PageTitle>Carrito de Compras - Mercado Orgánico</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-start justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl w-full space-y-8">
+        <div class="text-center">
+            <div class="flex justify-center items-center space-x-2 mb-4">
+                <i class="fas fa-shopping-cart text-4xl text-green-600"></i>
+                <span class="text-2xl font-bold text-green-700">Mercado Orgánico</span>
+            </div>
+            <h2 class="text-3xl font-extrabold text-gray-900">Tu Carrito de Compras</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Revisa los productos que has añadido y procede a la compra
+            </p>
+        </div>
+
+        @if (cartItems.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="md:col-span-2 bg-white rounded-lg shadow-lg p-6 space-y-4">
+                    @foreach (var item in cartItems)
+                    {
+                        <div class="flex items-center justify-between border-b last:border-b-0 py-4">
+                            <div class="flex items-center space-x-4">
+                                <img src="@item.ImageUrl" alt="@item.Name" class="w-16 h-16 object-cover rounded-md border border-gray-200" />
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-900">@item.Name</h4>
+                                    <p class="text-sm text-green-600 font-semibold mt-1">@item.Price.ToString("C")</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-2">
+                                    <button @onclick="() => DecreaseQuantity(item.ProductId)"
+                                            class="p-2 border border-green-300 rounded-md text-green-600 hover:bg-green-50 transition">
+                                        <i class="fas fa-minus text-sm"></i>
+                                    </button>
+                                    <span class="w-10 text-center font-bold text-gray-800">@item.Quantity</span>
+                                    <button @onclick="() => IncreaseQuantity(item.ProductId)"
+                                            class="p-2 border border-green-300 rounded-md text-green-600 hover:bg-green-50 transition">
+                                        <i class="fas fa-plus text-sm"></i>
+                                    </button>
+                                </div>
+
+                                <div class="w-24 text-right">
+                                    <p class="text-gray-900 font-medium">@((item.Price * item.Quantity).ToString("C"))</p>
+                                </div>
+
+                                <button @onclick="() => RemoveItem(item.ProductId)"
+                                        class="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="md:col-span-1 bg-white rounded-lg shadow-lg p-6 space-y-6 self-start">
+                    <h3 class="text-xl font-bold text-gray-900 border-b pb-4">Resumen del Pedido</h3>
+
+                    <div class="flex justify-between items-center text-gray-700">
+                        <span>Subtotal</span>
+                        <span class="font-medium">@Subtotal.ToString("C")</span>
+                    </div>
+
+                    <div class="flex justify-between items-center text-gray-700">
+                        <span>Envío (Estimado)</span>
+                        <span class="font-medium">Gratis</span>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xl font-bold text-gray-900 border-t pt-4">
+                        <span>Total</span>
+                        <span>@Subtotal.ToString("C")</span>
+                    </div>
+
+                    <button @onclick="ProceedToCheckout"
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <i class="fas fa-credit-card text-green-500 group-hover:text-green-400"></i>
+                        </span>
+                        Proceder al Pago
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+                <i class="fas fa-shopping-basket text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-2xl font-bold text-gray-800">Tu carrito está vacío</h3>
+                <p class="mt-2 text-gray-600">Parece que no has añadido productos aún.</p>
+                <a href="/" class="mt-4 inline-block px-6 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 transition">
+                    <i class="fas fa-home mr-2"></i>Ir a la tienda
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    
+    private List<CartItem> cartItems = new();
+
+    
+    private decimal Subtotal => cartItems.Sum(item => item.Price * item.Quantity);
+
+    protected override void OnInitialized()
+    {
+        
+        cartItems = CartService.GetCartItems();
+        
+        CartService.OnChange += UpdateCartDisplay;
+    }
+
+    
+    private void UpdateCartDisplay()
+    {
+        cartItems = CartService.GetCartItems(); 
+        StateHasChanged(); 
+    }
+
+    private void IncreaseQuantity(int productId)
+    {
+       
+        CartService.IncreaseQuantity(productId);
+        
+    }
+
+    private void DecreaseQuantity(int productId)
+    {
+        
+        CartService.DecreaseQuantity(productId);
+        
+    }
+
+    private void RemoveItem(int productId)
+    {
+       
+        CartService.RemoveItem(productId);
+        
+    }
+
+    private void ProceedToCheckout()
+    {
+        
+        CartService.ClearCart();
+        NavigationManager.NavigateTo("/CompraFinalizada");
+    }
+
+    
+    public void Dispose()
+    {
+        CartService.OnChange -= UpdateCartDisplay;
+    }
+}
