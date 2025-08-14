@@ -1,14 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Proyecto_Final1.Data;
-using Proyecto_Final1.Usuarios; // Asegúrate de que esta referencia sea correcta
-
+using Proyecto_Final1.Usuarios; 
 namespace Proyecto_Final1.Usuarios
 {
     public class DireccionDeEnvio
     {
         [Key]
         public int DireccionId { get; set; }
-        public string UsuarioId { get; set; } // Id de ApplicationUser
+        public string UsuarioId { get; set; } 
         [Required]
         public string Calle { get; set; }
         public string Ciudad { get; set; }
@@ -17,7 +16,7 @@ namespace Proyecto_Final1.Usuarios
         public string Pais { get; set; }
         public bool EsDefault { get; set; }
 
-        // Propiedad de navegación, ahora de tipo ApplicationUser
+        
         public virtual ApplicationUser Usuario { get; set; }
     }
 }

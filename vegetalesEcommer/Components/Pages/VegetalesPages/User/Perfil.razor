@@ -1,341 +1,764 @@
-﻿@page "/perfil"
-@rendermode InteractiveServer
+﻿@page "/Account/Profile"
+@page "/Perfil"
+
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using Proyecto_Final1.Data
-@using Proyecto_Final1.Usuarios
 @using Proyecto_Final1.Pedidos
-@inject NavigationManager NavManager
-@inject ApplicationDbContext DbContext
-@inject UserManager<ApplicationUser> UserManager
-@inject ILogger<Perfil> Logger
-@inject IJSRuntime JSRuntime
+@using Proyecto_Final1.Usuarios
 
 @attribute [Authorize]
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ApplicationDbContext DbContext
+@inject ILogger<Perfil> Logger
+@inject NavigationManager NavigationManager
 
 <PageTitle>Mi Perfil - Mercado Orgánico</PageTitle>
 
-<div class="min-h-screen bg-green-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium">Error</h3>
-                        <p class="text-sm mt-1">@errorMessage</p>
-                    </div>
-                </div>
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+        
+        <div class="text-center mb-8">
+            <div class="flex justify-center items-center space-x-2 mb-4">
+                <i class="fas fa-leaf text-4xl text-green-600"></i>
+                <span class="text-2xl font-bold text-green-700">Mercado Orgánico</span>
             </div>
-        }
-        @if (!string.IsNullOrEmpty(statusMessage))
-        {
-            <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg" role="alert">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.414-9.586a1 1 0 011.414 0L10 10.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium">Éxito</h3>
-                        <p class="text-sm mt-1">@statusMessage</p>
-                    </div>
-                </div>
-            </div>
-        }
+            <h1 class="text-3xl font-extrabold text-gray-900">Mi Perfil</h1>
+            <p class="mt-2 text-sm text-gray-600">
+                Bienvenido/a, @(currentUser?.Nombre) @(currentUser?.Apellido)
+            </p>
+        </div>
 
-        @if (isLoading)
-        {
-            <div class="flex flex-col items-center justify-center py-20">
-                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
-                <p class="mt-4 text-gray-600 font-medium">Cargando tu perfil...</p>
-            </div>
-        }
-        else if (currentUser != null)
-        {
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex items-center space-x-4">
-                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                        @(currentUser.Nombre?.Substring(0, 1).ToUpper() ?? "U")
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 space-y-6">
+                
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-user text-green-600 mr-2"></i>Información Personal
+                        </h2>
+                        <button @onclick="TogglePersonalEditMode"
+                                class="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                            <i class="fas @(isEditingPersonal ? "fa-times" : "fa-edit") mr-1"></i>
+                            @(isEditingPersonal ? "Cancelar" : "Editar")
+                        </button>
                     </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">@($"{currentUser.Nombre} {currentUser.Apellido}")</h1>
-                        <p class="text-gray-500">@currentUser.Email</p>
-                        <div class="flex items-center mt-1">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                @(string.Join(", ", userRoles.Any() ? userRoles : new List<string> { "Cliente" }))
-                            </span>
+
+                    @if (!string.IsNullOrEmpty(personalSuccessMessage))
+                    {
+                        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm mb-4" role="alert">
+                            <i class="fas fa-check-circle mr-2"></i>@personalSuccessMessage
                         </div>
-                    </div>
-                </div>
-            </div>
+                    }
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Mis Direcciones</h2>
-                    <button @onclick="NavegarARegistroDireccion" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Añadir dirección
-                    </button>
-                </div>
+                    @if (!string.IsNullOrEmpty(personalErrorMessage))
+                    {
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4" role="alert">
+                            <i class="fas fa-exclamation-circle mr-2"></i>@personalErrorMessage
+                        </div>
+                    }
 
-                @if (currentUser.DireccionesDeEnvio != null && currentUser.DireccionesDeEnvio.Any())
-                {
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach (var direccion in currentUser.DireccionesDeEnvio.OrderByDescending(d => d.EsDefault))
-                        {
-                            <div class="relative border border-gray-200 rounded-lg p-4 transition-shadow hover:shadow-md">
-                                @if (direccion.EsDefault)
-                                {
-                                    <span class="absolute top-2 right-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Principal
-                                    </span>
-                                }
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="font-medium text-gray-900">Dirección #@direccion.DireccionId</h3>
-                                        <p class="text-sm text-gray-600 mt-1">@direccion.Calle</p>
-                                        <p class="text-sm text-gray-600">@direccion.Ciudad, @direccion.Estado</p>
-                                        <p class="text-sm text-gray-600">@direccion.CodigoPostal, @direccion.Pais</p>
-                                    </div>
+                    @if (isEditingPersonal)
+                    {
+                        
+                        <EditForm Model="PersonalInput" OnValidSubmit="UpdatePersonalInfo" FormName="personal" class="space-y-6">
+                            <DataAnnotationsValidator />
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label for="PersonalInput.Nombre" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-user text-green-600 mr-2"></i>Nombre
+                                    </label>
+                                    <InputText @bind-Value="PersonalInput.Nombre"
+                                               id="PersonalInput.Nombre"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="Tu nombre" />
+                                    <ValidationMessage For="() => PersonalInput.Nombre" class="text-red-600 text-sm" />
                                 </div>
-                                <div class="absolute bottom-2 right-2 flex space-x-2">
-                                    <button @onclick="() => NavegarAEditarDireccion(direccion.DireccionId)" class="text-green-600 hover:text-green-800 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L15.232 5.232z"></path>
-                                        </svg>
-                                    </button>
-                                    <button @onclick="() => EliminarDireccion(direccion.DireccionId)" class="text-red-600 hover:text-red-800 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
+
+                                <div class="space-y-2">
+                                    <label for="PersonalInput.Apellido" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-user text-green-600 mr-2"></i>Apellido
+                                    </label>
+                                    <InputText @bind-Value="PersonalInput.Apellido"
+                                               id="PersonalInput.Apellido"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="Tu apellido" />
+                                    <ValidationMessage For="() => PersonalInput.Apellido" class="text-red-600 text-sm" />
                                 </div>
                             </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-8">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No tienes direcciones guardadas</h3>
-                        <p class="mt-1 text-sm text-gray-500">Añade una dirección para facilitar tus compras</p>
-                        <div class="mt-4">
-                            <button @onclick="NavegarARegistroDireccion" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                Añadir mi primera dirección
-                            </button>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label for="PersonalInput.PhoneNumber" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-phone text-green-600 mr-2"></i>Teléfono
+                                    </label>
+                                    <InputText @bind-Value="PersonalInput.PhoneNumber"
+                                               id="PersonalInput.PhoneNumber"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="Tu número de teléfono" />
+                                    <ValidationMessage For="() => PersonalInput.PhoneNumber" class="text-red-600 text-sm" />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label for="PersonalInput.FechaNacimiento" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-calendar text-green-600 mr-2"></i>Fecha de Nacimiento
+                                    </label>
+                                    <InputDate @bind-Value="PersonalInput.FechaNacimiento"
+                                               id="PersonalInput.FechaNacimiento"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" />
+                                    <ValidationMessage For="() => PersonalInput.FechaNacimiento" class="text-red-600 text-sm" />
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-4">
+                                <button type="submit"
+                                        class="flex-1 py-3 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition transform hover:scale-105">
+                                    <i class="fas fa-save mr-2"></i>Guardar Cambios
+                                </button>
+                                <button type="button"
+                                        @onclick="TogglePersonalEditMode"
+                                        class="flex-1 py-3 px-4 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
+                                    <i class="fas fa-times mr-2"></i>Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-user text-green-600 mr-2"></i>Nombre
+                                    </label>
+                                    <div class="text-lg text-gray-900">@(currentUser?.Nombre ?? "No especificado")</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-user text-green-600 mr-2"></i>Apellido
+                                    </label>
+                                    <div class="text-lg text-gray-900">@(currentUser?.Apellido ?? "No especificado")</div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-envelope text-green-600 mr-2"></i>Correo Electrónico
+                                    </label>
+                                    <div class="text-lg text-gray-900">@currentUser?.Email</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-phone text-green-600 mr-2"></i>Teléfono
+                                    </label>
+                                    <div class="text-lg text-gray-900">@(currentUser?.PhoneNumber ?? "No especificado")</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-calendar text-green-600 mr-2"></i>Fecha de Nacimiento
+                                </label>
+                                <div class="text-lg text-gray-900">
+                                    @(currentUser?.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "No especificada")
+                                </div>
+                            </div>
                         </div>
+                    }
+                </div>
+
+                
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>Direcciones de Envío
+                        </h2>
+                        <button @onclick="ToggleAddAddressMode"
+                                class="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                            <i class="fas fa-plus mr-1"></i>
+                            Agregar Dirección
+                        </button>
                     </div>
-                }
-            </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Historial de Pedidos</h2>
+                    @if (!string.IsNullOrEmpty(addressSuccessMessage))
+                    {
+                        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm mb-4" role="alert">
+                            <i class="fas fa-check-circle mr-2"></i>@addressSuccessMessage
+                        </div>
+                    }
 
-                @if (currentUser.Pedidos != null && currentUser.Pedidos.Any())
-                {
+                    @if (!string.IsNullOrEmpty(addressErrorMessage))
+                    {
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4" role="alert">
+                            <i class="fas fa-exclamation-circle mr-2"></i>@addressErrorMessage
+                        </div>
+                    }
+
+                    @if (isAddingAddress || editingAddressId > 0)
+                    {
+                        
+                        <EditForm Model="AddressInput" OnValidSubmit="SaveAddress" FormName="address" class="space-y-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                            <DataAnnotationsValidator />
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label for="AddressInput.Calle" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-road text-green-600 mr-2"></i>Calle
+                                    </label>
+                                    <InputText @bind-Value="AddressInput.Calle"
+                                               id="AddressInput.Calle"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="Calle y número" />
+                                    <ValidationMessage For="() => AddressInput.Calle" class="text-red-600 text-sm" />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label for="AddressInput.Ciudad" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-city text-green-600 mr-2"></i>Ciudad
+                                    </label>
+                                    <InputText @bind-Value="AddressInput.Ciudad"
+                                               id="AddressInput.Ciudad"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="Ciudad" />
+                                    <ValidationMessage For="() => AddressInput.Ciudad" class="text-red-600 text-sm" />
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="space-y-2">
+                                    <label for="AddressInput.Estado" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-map text-green-600 mr-2"></i>Estado/Provincia
+                                    </label>
+                                    <InputText @bind-Value="AddressInput.Estado"
+                                               id="AddressInput.Estado"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="Estado" />
+                                    <ValidationMessage For="() => AddressInput.Estado" class="text-red-600 text-sm" />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label for="AddressInput.CodigoPostal" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-mail-bulk text-green-600 mr-2"></i>Código Postal
+                                    </label>
+                                    <InputText @bind-Value="AddressInput.CodigoPostal"
+                                               id="AddressInput.CodigoPostal"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="CP" />
+                                    <ValidationMessage For="() => AddressInput.CodigoPostal" class="text-red-600 text-sm" />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label for="AddressInput.Pais" class="block text-sm font-medium text-gray-700">
+                                        <i class="fas fa-globe text-green-600 mr-2"></i>País
+                                    </label>
+                                    <InputText @bind-Value="AddressInput.Pais"
+                                               id="AddressInput.Pais"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="País" />
+                                    <ValidationMessage For="() => AddressInput.Pais" class="text-red-600 text-sm" />
+                                </div>
+                            </div>
+
+                            <div class="flex items-center">
+                                <InputCheckbox @bind-Value="AddressInput.EsDefault"
+                                               id="AddressInput.EsDefault"
+                                               class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                                <label for="AddressInput.EsDefault" class="ml-2 block text-sm text-gray-700">
+                                    <i class="fas fa-star text-yellow-500 mr-1"></i>Establecer como dirección predeterminada
+                                </label>
+                            </div>
+
+                            <div class="flex space-x-4">
+                                <button type="submit"
+                                        class="flex-1 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
+                                    <i class="fas fa-save mr-2"></i>@(editingAddressId > 0 ? "Actualizar" : "Guardar") Dirección
+                                </button>
+                                <button type="button"
+                                        @onclick="CancelAddressEdit"
+                                        class="flex-1 py-2 px-4 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 transition">
+                                    <i class="fas fa-times mr-2"></i>Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+
+                    
                     <div class="space-y-4">
-                        @foreach (var pedido in currentUser.Pedidos.OrderByDescending(p => p.FechaPedido))
+                        @if (userAddresses?.Any() == true)
                         {
-                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-green-50 transition-colors">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-4">
-                                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                            </svg>
+                            @foreach (var direccion in userAddresses)
+                            {
+                                <div class="border border-gray-200 rounded-lg p-4 @(direccion.EsDefault ? "border-green-500 bg-green-50" : "")">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            @if (direccion.EsDefault)
+                                            {
+                                                <div class="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-200 text-green-800 rounded-full mb-2">
+                                                    <i class="fas fa-star mr-1"></i>Predeterminada
+                                                </div>
+                                            }
+                                            <div class="text-lg font-medium text-gray-900">@direccion.Calle</div>
+                                            <div class="text-sm text-gray-600">
+                                                @direccion.Ciudad, @direccion.Estado @direccion.CodigoPostal
+                                            </div>
+                                            <div class="text-sm text-gray-600">@direccion.Pais</div>
                                         </div>
-                                        <div>
-                                            <h3 class="font-medium text-gray-900">Pedido #@pedido.PedidoId</h3>
-                                            <p class="text-sm text-gray-500">@pedido.FechaPedido.ToString("dd/MM/yyyy HH:mm")</p>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium @GetEstadoBadgeClass(pedido.Estado)">
-                                                @pedido.Estado
-                                            </span>
+                                        <div class="flex space-x-2 ml-4">
+                                            <button @onclick="() => EditAddress(direccion)"
+                                                    class="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                                                <i class="fas fa-edit mr-1"></i>Editar
+                                            </button>
+                                            @if (!direccion.EsDefault)
+                                            {
+                                                <button @onclick="() => SetDefaultAddress(direccion.DireccionId)"
+                                                        class="px-3 py-1 text-xs bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition">
+                                                    <i class="fas fa-star mr-1"></i>Predeterminada
+                                                </button>
+                                            }
+                                            <button @onclick="() => DeleteAddress(direccion.DireccionId)"
+                                                    class="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                                                <i class="fas fa-trash mr-1"></i>Eliminar
+                                            </button>
                                         </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-lg font-semibold text-gray-900">@pedido.Total.ToString("C")</p>
-                                        <a href="/pedidos/detalle/@pedido.PedidoId" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                            Ver detalle
-                                        </a>
                                     </div>
                                 </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-map-marker-alt text-4xl text-gray-300 mb-4"></i>
+                                <p>No tienes direcciones de envío registradas.</p>
+                                <p class="text-sm">Agrega tu primera dirección para realizar pedidos.</p>
                             </div>
                         }
                     </div>
-                }
-                else
-                {
-                    <div class="text-center py-8">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">Aún no has hecho ningún pedido</h3>
-                        <p class="mt-1 text-sm text-gray-500">Comienza explorando nuestros productos</p>
-                        <div class="mt-4">
-                            <NavLink href="/productos" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                Seguir comprando
-                            </NavLink>
-                        </div>
-                    </div>
-                }
+                </div>
             </div>
-        }
+
+            
+            <div class="space-y-6">
+                
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-shopping-bag text-green-600 mr-2"></i>Mis Pedidos
+                    </h3>
+                    @if (userOrders?.Any() == true)
+                    {
+                        <div class="space-y-3">
+                            @foreach (var pedido in userOrders.Take(3))
+                            {
+                                <div class="border border-gray-200 rounded-lg p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-gray-900">#@pedido.PedidoId</span>
+                                        <span class="text-xs px-2 py-1 rounded-full @(GetStatusColor(pedido.Estado))">
+                                            @pedido.Estado
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        @pedido.FechaPedido.ToString("dd/MM/yyyy")
+                                    </div>
+                                    <div class="text-sm font-medium text-green-600">
+                                        $@pedido.Total.ToString("F2")
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-4">
+                            <a href="/Orders"
+                               class="block w-full text-center py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
+                                Ver Todos los Pedidos
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-6 text-gray-500">
+                            <i class="fas fa-shopping-bag text-3xl text-gray-300 mb-2"></i>
+                            <p class="text-sm">No tienes pedidos aún.</p>
+                            <a href="/" class="text-green-600 hover:text-green-700 text-sm font-medium">
+                                Comenzar a comprar
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="text-center mt-8">
+            <a href="/"
+               class="inline-flex items-center text-sm text-gray-600 hover:text-green-600 transition">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Volver al inicio
+            </a>
+        </div>
     </div>
 </div>
 
 @code {
     private ApplicationUser? currentUser;
-    private IList<string> userRoles = new List<string>();
-    private string? errorMessage;
-    private string? statusMessage;
-    private bool isLoading = true;
+    private List<DireccionDeEnvio>? userAddresses;
+    private List<Pedido>? userOrders;
 
-    [CascadingParameter]
-    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+    
+    private bool isEditingPersonal = false;
+    private bool isAddingAddress = false;
+    private int editingAddressId = 0;
 
-    protected override async Task OnInitializedAsync()
+    
+    private string? personalSuccessMessage;
+    private string? personalErrorMessage;
+    private string? addressSuccessMessage;
+    private string? addressErrorMessage;
+
+    [SupplyParameterFromForm]
+    private PersonalInputModel PersonalInput { get; set; } = new();
+
+    [SupplyParameterFromForm]
+    private AddressInputModel AddressInput { get; set; } = new();
+
+    private async Task LoadUserData()
     {
-        await LoadUserProfile();
-    }
-
-    private async Task LoadUserProfile()
-    {
-        isLoading = true;
-        errorMessage = null;
-        statusMessage = null;
-        try
+        if (currentUser != null)
         {
-            var authState = await authenticationStateTask;
-            var user = authState.User;
-            var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (!string.IsNullOrEmpty(userId))
-            {
-                // Incluye las direcciones y pedidos del usuario.
-                currentUser = await DbContext.Users
-                    .AsNoTracking()
-                    .Include(u => u.DireccionesDeEnvio.OrderByDescending(d => d.EsDefault))
-                    .Include(u => u.Pedidos)
-                        .ThenInclude(p => p.Detalles)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
-
-                if (currentUser != null)
+            
+            PersonalInput = new PersonalInputModel
                 {
-                    userRoles = await UserManager.GetRolesAsync(currentUser);
-                }
-                else
-                {
-                    errorMessage = "No se pudo cargar la información del usuario.";
-                }
-            }
-            else
-            {
-                errorMessage = "No se pudo identificar al usuario autenticado.";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Ocurrió un error al cargar tu perfil. Por favor intenta más tarde.";
-            Logger.LogError(ex, "Error al cargar perfil del usuario");
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
+                    Nombre = currentUser.Nombre ?? "",
+                    Apellido = currentUser.Apellido ?? "",
+                    PhoneNumber = currentUser.PhoneNumber ?? "",
+                    FechaNacimiento = currentUser.FechaNacimiento
+                };
+
+            
+            userAddresses = await DbContext.Set<DireccionDeEnvio>()
+                .Where(d => d.UsuarioId == currentUser.Id)
+                .OrderByDescending(d => d.EsDefault)
+                .ToListAsync();
+
+            
+            userOrders = await DbContext.Set<Pedido>()
+                .Where(p => p.UsuarioId == currentUser.Id)
+                .OrderByDescending(p => p.FechaPedido)
+                .Take(10)
+                .ToListAsync();
         }
     }
 
-    private void NavegarARegistroDireccion()
+    private string GetStatusColor(string estado)
     {
-        NavManager.NavigateTo("/Registrodireccion");
-    }
-
-    private void NavegarAEditarDireccion(int id)
-    {
-        // Navega a la página de registro de dirección con el ID para el modo de edición.
-        NavManager.NavigateTo($"/Registrodireccion/{id}");
-    }
-
-    private async Task EliminarDireccion(int id)
-    {
-        bool confirmed = false;
-        try
+        return estado.ToLower() switch
         {
-            // Usamos un modal de confirmación en lugar de alert()
-            // para una mejor experiencia de usuario.
-            confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Estás seguro que deseas eliminar esta dirección?");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error al invocar la confirmación de JS");
-        }
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        try
-        {
-            // Busca la dirección por su ID.
-            var direccion = await DbContext.DireccionesDeEnvio.FindAsync(id);
-
-            // Verifica que la dirección exista y que pertenezca al usuario actual.
-            if (direccion != null && direccion.UsuarioId == currentUser!.Id)
-            {
-                DbContext.DireccionesDeEnvio.Remove(direccion);
-                await DbContext.SaveChangesAsync();
-                statusMessage = "¡Dirección eliminada con éxito!";
-                await LoadUserProfile(); // Recarga los datos del perfil para reflejar el cambio.
-            }
-            else
-            {
-                errorMessage = "No se pudo encontrar la dirección o no tienes permiso para eliminarla.";
-            }
-        }
-        catch (DbUpdateException ex)
-        {
-            errorMessage = "Ocurrió un error en la base de datos al eliminar la dirección. Es posible que existan dependencias.";
-            Logger.LogError(ex, "Error de DbUpdateException al eliminar la dirección");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Ocurrió un error inesperado al eliminar la dirección. Por favor, intenta de nuevo.";
-            Logger.LogError(ex, "Error inesperado al eliminar la dirección");
-        }
-    }
-
-    private string GetEstadoBadgeClass(string estado)
-    {
-        return estado switch
-        {
-            "Procesando" => "bg-yellow-100 text-yellow-800",
-            "Enviado" => "bg-blue-100 text-blue-800",
-            "Completado" => "bg-green-100 text-green-800",
-            "Cancelado" => "bg-red-100 text-red-800",
+            "pendiente" => "bg-yellow-100 text-yellow-800",
+            "procesando" => "bg-blue-100 text-blue-800",
+            "enviado" => "bg-purple-100 text-purple-800",
+            "entregado" => "bg-green-100 text-green-800",
+            "cancelado" => "bg-red-100 text-red-800",
             _ => "bg-gray-100 text-gray-800"
         };
     }
+
+    #region Personal Info Methods
+
+    private void TogglePersonalEditMode()
+    {
+        isEditingPersonal = !isEditingPersonal;
+        personalSuccessMessage = null;
+        personalErrorMessage = null;
+
+        if (!isEditingPersonal && currentUser != null)
+        {
+            
+            PersonalInput.Nombre = currentUser.Nombre ?? "";
+            PersonalInput.Apellido = currentUser.Apellido ?? "";
+            PersonalInput.PhoneNumber = currentUser.PhoneNumber ?? "";
+            PersonalInput.FechaNacimiento = currentUser.FechaNacimiento;
+        }
+    }
+
+    private async Task UpdatePersonalInfo()
+    {
+        try
+        {
+            if (currentUser != null)
+            {
+                currentUser.Nombre = PersonalInput.Nombre;
+                currentUser.Apellido = PersonalInput.Apellido;
+                currentUser.PhoneNumber = PersonalInput.PhoneNumber;
+                currentUser.FechaNacimiento = PersonalInput.FechaNacimiento;
+
+                var result = await UserManager.UpdateAsync(currentUser);
+                if (result.Succeeded)
+                {
+                    personalSuccessMessage = "Información personal actualizada correctamente.";
+                    isEditingPersonal = false;
+                    Logger.LogInformation("User personal info updated successfully.");
+                }
+                else
+                {
+                    personalErrorMessage = "Error al actualizar la información: " + string.Join(", ", result.Errors.Select(e => e.Description));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            personalErrorMessage = "Error inesperado al actualizar la información.";
+            Logger.LogError(ex, "Error updating user personal info");
+        }
+    }
+
+    #endregion
+
+    #region Address Methods
+
+    private void ToggleAddAddressMode()
+    {
+        isAddingAddress = !isAddingAddress;
+        if (isAddingAddress)
+        {
+            AddressInput = new AddressInputModel();
+            editingAddressId = 0;
+        }
+        addressSuccessMessage = null;
+        addressErrorMessage = null;
+    }
+
+    private void EditAddress(DireccionDeEnvio direccion)
+    {
+        editingAddressId = direccion.DireccionId;
+        isAddingAddress = true;
+        AddressInput = new AddressInputModel
+            {
+                Calle = direccion.Calle,
+                Ciudad = direccion.Ciudad ?? "",
+                Estado = direccion.Estado ?? "",
+                CodigoPostal = direccion.CodigoPostal ?? "",
+                Pais = direccion.Pais ?? "",
+                EsDefault = direccion.EsDefault
+            };
+        addressSuccessMessage = null;
+        addressErrorMessage = null;
+    }
+
+    private void CancelAddressEdit()
+    {
+        isAddingAddress = false;
+        editingAddressId = 0;
+        AddressInput = new AddressInputModel();
+        addressSuccessMessage = null;
+        addressErrorMessage = null;
+    }
+
+    private async Task SaveAddress()
+    {
+        try
+        {
+            if (currentUser == null) return;
+
+            if (editingAddressId > 0)
+            {
+                
+                var existingAddress = await DbContext.Set<DireccionDeEnvio>()
+                    .FirstOrDefaultAsync(d => d.DireccionId == editingAddressId && d.UsuarioId == currentUser.Id);
+
+                if (existingAddress != null)
+                {
+                    existingAddress.Calle = AddressInput.Calle;
+                    existingAddress.Ciudad = AddressInput.Ciudad;
+                    existingAddress.Estado = AddressInput.Estado;
+                    existingAddress.CodigoPostal = AddressInput.CodigoPostal;
+                    existingAddress.Pais = AddressInput.Pais;
+
+                    
+                    if (AddressInput.EsDefault && !existingAddress.EsDefault)
+                    {
+                        await UnsetAllDefaultAddresses();
+                        existingAddress.EsDefault = true;
+                    }
+                    else if (!AddressInput.EsDefault)
+                    {
+                        existingAddress.EsDefault = false;
+                    }
+                }
+            }
+            else
+            {
+                
+                var newAddress = new DireccionDeEnvio
+                    {
+                        UsuarioId = currentUser.Id,
+                        Calle = AddressInput.Calle,
+                        Ciudad = AddressInput.Ciudad,
+                        Estado = AddressInput.Estado,
+                        CodigoPostal = AddressInput.CodigoPostal,
+                        Pais = AddressInput.Pais,
+                        EsDefault = AddressInput.EsDefault
+                    };
+
+                
+                if (userAddresses?.Count == 0)
+                {
+                    newAddress.EsDefault = true;
+                }
+
+                
+                if (AddressInput.EsDefault)
+                {
+                    await UnsetAllDefaultAddresses();
+                }
+
+                DbContext.Set<DireccionDeEnvio>().Add(newAddress);
+            }
+
+            await DbContext.SaveChangesAsync();
+            await LoadUserData();
+
+            addressSuccessMessage = editingAddressId > 0 ? "Dirección actualizada correctamente." : "Dirección agregada correctamente.";
+            CancelAddressEdit();
+        }
+        catch (Exception ex)
+        {
+            addressErrorMessage = "Error al guardar la dirección.";
+            Logger.LogError(ex, "Error saving address");
+        }
+    }
+
+    private async Task SetDefaultAddress(int direccionId)
+    {
+        try
+        {
+            await UnsetAllDefaultAddresses();
+
+            var address = await DbContext.Set<DireccionDeEnvio>()
+                .FirstOrDefaultAsync(d => d.DireccionId == direccionId && d.UsuarioId == currentUser!.Id);
+
+            if (address != null)
+            {
+                address.EsDefault = true;
+                await DbContext.SaveChangesAsync();
+                await LoadUserData();
+                addressSuccessMessage = "Dirección establecida como predeterminada.";
+            }
+        }
+        catch (Exception ex)
+        {
+            addressErrorMessage = "Error al establecer dirección predeterminada.";
+            Logger.LogError(ex, "Error setting default address");
+        }
+    }
+
+    private async Task DeleteAddress(int direccionId)
+    {
+        try
+        {
+            var address = await DbContext.Set<DireccionDeEnvio>()
+                .FirstOrDefaultAsync(d => d.DireccionId == direccionId && d.UsuarioId == currentUser!.Id);
+
+            if (address != null)
+            {
+                bool wasDefault = address.EsDefault;
+                DbContext.Set<DireccionDeEnvio>().Remove(address);
+                await DbContext.SaveChangesAsync();
+
+                
+                if (wasDefault)
+                {
+                    var firstAddress = await DbContext.Set<DireccionDeEnvio>()
+                        .Where(d => d.UsuarioId == currentUser.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (firstAddress != null)
+                    {
+                        firstAddress.EsDefault = true;
+                        await DbContext.SaveChangesAsync();
+                    }
+                }
+
+                await LoadUserData();
+                addressSuccessMessage = "Dirección eliminada correctamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            addressErrorMessage = "Error al eliminar la dirección.";
+            Logger.LogError(ex, "Error deleting address");
+        }
+    }
+
+    private async Task UnsetAllDefaultAddresses()
+    {
+        var defaultAddresses = await DbContext.Set<DireccionDeEnvio>()
+            .Where(d => d.UsuarioId == currentUser!.Id && d.EsDefault)
+            .ToListAsync();
+
+        foreach (var address in defaultAddresses)
+        {
+            address.EsDefault = false;
+        }
+    }
+
+    #endregion
+
+    private async Task Logout()
+    {
+        
+        if (currentUser != null)
+        {
+            currentUser.UltimoLogin = DateTime.Now;
+            await UserManager.UpdateAsync(currentUser);
+        }
+
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/");
+    }
+
+    #region Input Models
+
+    private sealed class PersonalInputModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [MaxLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
+        public string Nombre { get; set; } = "";
+
+        [Required(ErrorMessage = "El apellido es obligatorio.")]
+        [MaxLength(100, ErrorMessage = "El apellido no puede exceder los 100 caracteres.")]
+        public string Apellido { get; set; } = "";
+
+        [Phone(ErrorMessage = "Formato de teléfono inválido.")]
+        public string PhoneNumber { get; set; } = "";
+
+        [Display(Name = "Fecha de Nacimiento")]
+        public DateTime? FechaNacimiento { get; set; }
+    }
+
+    private sealed class AddressInputModel
+    {
+        [Required(ErrorMessage = "La calle es obligatoria.")]
+        [MaxLength(200, ErrorMessage = "La calle no puede exceder los 200 caracteres.")]
+        public string Calle { get; set; } = "";
+
+        [MaxLength(100, ErrorMessage = "La ciudad no puede exceder los 100 caracteres.")]
+        public string Ciudad { get; set; } = "";
+
+        [MaxLength(100, ErrorMessage = "El estado no puede exceder los 100 caracteres.")]
+        public string Estado { get; set; } = "";
+
+        [MaxLength(20, ErrorMessage = "El código postal no puede exceder los 20 caracteres.")]
+        public string CodigoPostal { get; set; } = "";
+
+        [MaxLength(100, ErrorMessage = "El país no puede exceder los 100 caracteres.")]
+        public string Pais { get; set; } = "";
+
+        public bool EsDefault { get; set; }
+    }
+
+    #endregion
 }
