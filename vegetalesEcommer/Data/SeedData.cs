@@ -3,11 +3,11 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Proyecto_Final1.Usuarios; // Asegúrate de que esta referencia sea correcta
+using Proyecto_Final1.Usuarios; 
 
 namespace Proyecto_Final1.Data
 {
-    public static class SeedData // La clase ahora es estática
+    public static class SeedData 
     {
         public static async Task Initialize(IServiceProvider serviceProvider)
         {
@@ -16,18 +16,18 @@ namespace Proyecto_Final1.Data
 
             try
             {
-                // 1. Crear Roles si no existen
+                
                 await EnsureRolesCreated(roleManager);
 
-                // 2. Crear Usuario Admin por defecto
+                
                 await EnsureAdminUserExists(userManager, roleManager);
 
-                // 3. Crear Usuario Cliente de prueba
+               
                 await EnsureTestClientExists(userManager, roleManager);
             }
             catch (Exception ex)
             {
-                // Manejo de errores
+                
                 Console.WriteLine($"Error al inicializar datos: {ex.Message}");
             }
         }

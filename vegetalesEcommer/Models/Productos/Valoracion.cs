@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using Proyecto_Final1.Data;
-using Proyecto_Final1.Usuarios; // Agregado para usar ApplicationUser
+using Proyecto_Final1.Usuarios; 
 
 namespace Proyecto_Final1.Productos
 {
@@ -10,12 +10,12 @@ namespace Proyecto_Final1.Productos
         [Key]
         public int ValoracionId { get; set; }
         public int ProductoId { get; set; }
-        public string UsuarioId { get; set; } // Id de ApplicationUser
+        public string UsuarioId { get; set; } 
         public int Calificacion { get; set; }
         public string Comentario { get; set; }
         public DateTime FechaValoracion { get; set; }
 
-        // Propiedades de navegación
+        
         public virtual Producto Producto { get; set; }
         public virtual ApplicationUser Usuario { get; set; }
     }
