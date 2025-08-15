@@ -18,7 +18,7 @@ builder.Services.AddRazorComponents()
 
 // Servicios de la aplicación
 builder.Services.AddSingleton<CartService>();
-builder.Services.AddSingleton<ProductoService>();
+builder.Services.AddSingleton<ProductosService>();
 
 // Configuración de autenticación
 builder.Services.AddCascadingAuthenticationState();
