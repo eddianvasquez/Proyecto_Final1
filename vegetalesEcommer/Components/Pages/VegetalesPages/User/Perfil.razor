@@ -15,12 +15,13 @@
 @inject ApplicationDbContext DbContext
 @inject ILogger<Perfil> Logger
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Mi Perfil - Mercado Orgánico</PageTitle>
 
 <div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-6xl mx-auto">
-        
+
         <div class="text-center mb-8">
             <div class="flex justify-center items-center space-x-2 mb-4">
                 <i class="fas fa-leaf text-4xl text-green-600"></i>
@@ -33,9 +34,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <div class="lg:col-span-2 space-y-6">
-                
+
                 <div class="bg-white rounded-lg shadow-lg p-8">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-xl font-semibold text-gray-900">
@@ -64,7 +65,7 @@
 
                     @if (isEditingPersonal)
                     {
-                        
+
                         <EditForm Model="PersonalInput" OnValidSubmit="UpdatePersonalInfo" FormName="personal" class="space-y-6">
                             <DataAnnotationsValidator />
 
@@ -130,7 +131,7 @@
                     }
                     else
                     {
-                        
+
                         <div class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -174,7 +175,7 @@
                     }
                 </div>
 
-                
+
                 <div class="bg-white rounded-lg shadow-lg p-8">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-xl font-semibold text-gray-900">
@@ -203,7 +204,7 @@
 
                     @if (isAddingAddress || editingAddressId > 0)
                     {
-                        
+
                         <EditForm Model="AddressInput" OnValidSubmit="SaveAddress" FormName="address" class="space-y-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
                             <DataAnnotationsValidator />
 
@@ -289,7 +290,7 @@
                         </EditForm>
                     }
 
-                    
+
                     <div class="space-y-4">
                         @if (userAddresses?.Any() == true)
                         {
@@ -343,62 +344,83 @@
                 </div>
             </div>
 
-            
-            <div class="space-y-6">
-                
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-shopping-bag text-green-600 mr-2"></i>Mis Pedidos
-                    </h3>
-                    @if (userOrders?.Any() == true)
-                    {
-                        <div class="space-y-3">
-                            @foreach (var pedido in userOrders.Take(3))
-                            {
-                                <div class="border border-gray-200 rounded-lg p-3">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="text-sm font-medium text-gray-900">#@pedido.PedidoId</span>
-                                        <span class="text-xs px-2 py-1 rounded-full @(GetStatusColor(pedido.Estado))">
-                                            @pedido.Estado
-                                        </span>
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-shopping-bag text-green-600 mr-2"></i>Mis Pedidos Recientes
+                </h3>
+                @if (userOrders?.Any() == true)
+                {
+                    <div class="space-y-4">
+                        @foreach (var pedido in userOrders.Take(showAllOrders ? 10 : 3))
+                        {
+                            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-900">#MERCADO-@pedido.PedidoId</span>
+                                        <p class="text-xs text-gray-500">@pedido.FechaPedido.ToString("dd/MM/yyyy HH:mm")</p>
                                     </div>
-                                    <div class="text-sm text-gray-600">
-                                        @pedido.FechaPedido.ToString("dd/MM/yyyy")
+                                    <span class="text-xs px-2 py-1 rounded-full @(GetStatusColor(pedido.Estado))">
+                                        @pedido.Estado
+                                    </span>
+                                </div>
+
+                                @if (pedido.Detalles?.Any() == true)
+                                {
+                                    <div class="mb-3">
+                                        <p class="text-xs text-gray-600 mb-2">Productos:</p>
+                                        <div class="space-y-1 max-h-20 overflow-y-auto">
+                                            @foreach (var detalle in pedido.Detalles.Take(3))
+                                            {
+                                                <div class="flex justify-between text-xs">
+                                                    <span class="text-gray-700">
+                                                        @(detalle.Producto?.Nombre ?? "Producto") x@detalle.Cantidad
+                                                    </span>
+                                                    <span class="text-gray-600">@((detalle.PrecioUnitario * detalle.Cantidad).ToString("C"))</span>
+                                                </div>
+                                            }
+                                            @if (pedido.Detalles.Count > 3)
+                                            {
+                                                <p class="text-xs text-gray-500 italic">...y @(pedido.Detalles.Count - 3) más</p>
+                                            }
+                                        </div>
                                     </div>
+                                }
+
+                                <div class="flex justify-between items-center">
                                     <div class="text-sm font-medium text-green-600">
-                                        $@pedido.Total.ToString("F2")
+                                        Total: @pedido.Total.ToString("C")
                                     </div>
                                 </div>
-                            }
-                        </div>
-                        <div class="mt-4">
-                            <a href="/Orders"
-                               class="block w-full text-center py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
-                                Ver Todos los Pedidos
-                            </a>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-6 text-gray-500">
-                            <i class="fas fa-shopping-bag text-3xl text-gray-300 mb-2"></i>
-                            <p class="text-sm">No tienes pedidos aún.</p>
-                            <a href="/" class="text-green-600 hover:text-green-700 text-sm font-medium">
-                                Comenzar a comprar
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
+                            </div>
+                        }
+                    </div>
 
-        
-        <div class="text-center mt-8">
-            <a href="/"
-               class="inline-flex items-center text-sm text-gray-600 hover:text-green-600 transition">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Volver al inicio
-            </a>
+                    <div class="mt-4 space-y-2">
+                        @if (userOrders.Count > 3)
+                        {
+                            <button @onclick="ToggleShowAllOrders"
+                                    class="block w-full text-center py-2 px-4 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition">
+                                @(showAllOrders ? "Mostrar Menos" : $"Ver Más Pedidos ({userOrders.Count})")
+                            </button>
+                        }
+
+                        <a href="/Pedidos"
+                           class="block w-full text-center py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
+                            <i class="fas fa-history mr-2"></i>Ver Historial Completo
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-6 text-gray-500">
+                        <i class="fas fa-shopping-bag text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-sm">No tienes pedidos aún.</p>
+                        <a href="/" class="text-green-600 hover:text-green-700 text-sm font-medium">
+                            <i class="fas fa-shopping-cart mr-1"></i>Comenzar a comprar
+                        </a>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
@@ -408,28 +430,35 @@
     private List<DireccionDeEnvio>? userAddresses;
     private List<Pedido>? userOrders;
 
-    
+    // Estados de edición
     private bool isEditingPersonal = false;
     private bool isAddingAddress = false;
     private int editingAddressId = 0;
-
-    
+    private bool showAllOrders = false;
+    // Mensajes de estado
     private string? personalSuccessMessage;
     private string? personalErrorMessage;
     private string? addressSuccessMessage;
     private string? addressErrorMessage;
-
     [SupplyParameterFromForm]
     private PersonalInputModel PersonalInput { get; set; } = new();
-
     [SupplyParameterFromForm]
     private AddressInputModel AddressInput { get; set; } = new();
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            currentUser = await UserManager.GetUserAsync(authState.User);
+            await LoadUserData();
+        }
+    }
 
     private async Task LoadUserData()
     {
         if (currentUser != null)
         {
-            
+            // Información personal existente...
             PersonalInput = new PersonalInputModel
                 {
                     Nombre = currentUser.Nombre ?? "",
@@ -437,16 +466,17 @@
                     PhoneNumber = currentUser.PhoneNumber ?? "",
                     FechaNacimiento = currentUser.FechaNacimiento
                 };
-
-            
+            // Direcciones existente...
             userAddresses = await DbContext.Set<DireccionDeEnvio>()
                 .Where(d => d.UsuarioId == currentUser.Id)
                 .OrderByDescending(d => d.EsDefault)
                 .ToListAsync();
-
-            
+            // PEDIDOS MEJORADO - Cargar con detalles de productos
             userOrders = await DbContext.Set<Pedido>()
                 .Where(p => p.UsuarioId == currentUser.Id)
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Producto)
+                .Include(p => p.DireccionDeEnvio)
                 .OrderByDescending(p => p.FechaPedido)
                 .Take(10)
                 .ToListAsync();
@@ -466,6 +496,16 @@
         };
     }
 
+    private void ToggleShowAllOrders()
+    {
+        showAllOrders = !showAllOrders;
+    }
+
+    private void NavigateToPedidoDetails(int pedidoId)
+    {
+        NavigationManager.NavigateTo($"/CompraFinalizada/{pedidoId}");
+    }
+
     #region Personal Info Methods
 
     private void TogglePersonalEditMode()
@@ -476,7 +516,6 @@
 
         if (!isEditingPersonal && currentUser != null)
         {
-            
             PersonalInput.Nombre = currentUser.Nombre ?? "";
             PersonalInput.Apellido = currentUser.Apellido ?? "";
             PersonalInput.PhoneNumber = currentUser.PhoneNumber ?? "";
@@ -562,13 +601,10 @@
         try
         {
             if (currentUser == null) return;
-
             if (editingAddressId > 0)
             {
-                
                 var existingAddress = await DbContext.Set<DireccionDeEnvio>()
                     .FirstOrDefaultAsync(d => d.DireccionId == editingAddressId && d.UsuarioId == currentUser.Id);
-
                 if (existingAddress != null)
                 {
                     existingAddress.Calle = AddressInput.Calle;
@@ -576,8 +612,6 @@
                     existingAddress.Estado = AddressInput.Estado;
                     existingAddress.CodigoPostal = AddressInput.CodigoPostal;
                     existingAddress.Pais = AddressInput.Pais;
-
-                    
                     if (AddressInput.EsDefault && !existingAddress.EsDefault)
                     {
                         await UnsetAllDefaultAddresses();
@@ -591,7 +625,6 @@
             }
             else
             {
-                
                 var newAddress = new DireccionDeEnvio
                     {
                         UsuarioId = currentUser.Id,
@@ -602,14 +635,11 @@
                         Pais = AddressInput.Pais,
                         EsDefault = AddressInput.EsDefault
                     };
-
-                
                 if (userAddresses?.Count == 0)
                 {
                     newAddress.EsDefault = true;
                 }
 
-                
                 if (AddressInput.EsDefault)
                 {
                     await UnsetAllDefaultAddresses();
@@ -620,7 +650,6 @@
 
             await DbContext.SaveChangesAsync();
             await LoadUserData();
-
             addressSuccessMessage = editingAddressId > 0 ? "Dirección actualizada correctamente." : "Dirección agregada correctamente.";
             CancelAddressEdit();
         }
@@ -636,10 +665,8 @@
         try
         {
             await UnsetAllDefaultAddresses();
-
             var address = await DbContext.Set<DireccionDeEnvio>()
                 .FirstOrDefaultAsync(d => d.DireccionId == direccionId && d.UsuarioId == currentUser!.Id);
-
             if (address != null)
             {
                 address.EsDefault = true;
@@ -661,20 +688,17 @@
         {
             var address = await DbContext.Set<DireccionDeEnvio>()
                 .FirstOrDefaultAsync(d => d.DireccionId == direccionId && d.UsuarioId == currentUser!.Id);
-
             if (address != null)
             {
                 bool wasDefault = address.EsDefault;
                 DbContext.Set<DireccionDeEnvio>().Remove(address);
                 await DbContext.SaveChangesAsync();
 
-                
                 if (wasDefault)
                 {
                     var firstAddress = await DbContext.Set<DireccionDeEnvio>()
                         .Where(d => d.UsuarioId == currentUser.Id)
                         .FirstOrDefaultAsync();
-
                     if (firstAddress != null)
                     {
                         firstAddress.EsDefault = true;
@@ -698,7 +722,6 @@
         var defaultAddresses = await DbContext.Set<DireccionDeEnvio>()
             .Where(d => d.UsuarioId == currentUser!.Id && d.EsDefault)
             .ToListAsync();
-
         foreach (var address in defaultAddresses)
         {
             address.EsDefault = false;
@@ -706,19 +729,6 @@
     }
 
     #endregion
-
-    private async Task Logout()
-    {
-        
-        if (currentUser != null)
-        {
-            currentUser.UltimoLogin = DateTime.Now;
-            await UserManager.UpdateAsync(currentUser);
-        }
-
-        await SignInManager.SignOutAsync();
-        NavigationManager.NavigateTo("/");
-    }
 
     #region Input Models
 
