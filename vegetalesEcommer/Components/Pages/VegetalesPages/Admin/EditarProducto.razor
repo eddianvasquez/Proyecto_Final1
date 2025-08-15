@@ -1,19 +1,20 @@
 ﻿@page "/EditarProducto/{ProductoId:int}"
 
 @using System.ComponentModel.DataAnnotations
-@using System.IO 
-@using Microsoft.AspNetCore.Components.Forms 
-@using Microsoft.AspNetCore.Hosting 
-@using Proyecto_Final1.Data 
-@using Proyecto_Final1.Productos 
+@using System.IO
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
+@using Proyecto_Final1.Data
+@using Proyecto_Final1.Productos
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Authorization 
+@using Microsoft.AspNetCore.Authorization
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject ILogger<EditarProducto> Logger
-@inject IWebHostEnvironment WebHostEnvironment // Inyectar para acceder a wwwroot
+@inject IWebHostEnvironment WebHostEnvironment
+@inject IJSRuntime JSRuntime
 
-@attribute [Authorize(Roles = "Admin")] 
+@attribute [Authorize(Roles = "Admin")]
 @if (isLoading)
 {
     <div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -43,7 +44,7 @@ else
 
     <div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl w-full space-y-8">
-            
+
             <div class="text-center mb-8">
                 <div class="flex justify-center items-center space-x-2 mb-4">
                     <i class="fas fa-edit text-4xl text-green-600"></i>
@@ -55,7 +56,6 @@ else
                 </p>
             </div>
 
-            
             @if (!string.IsNullOrEmpty(successMessage))
             {
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-md" role="alert">
@@ -69,12 +69,11 @@ else
                 </div>
             }
 
-            
+
             <div class="bg-white rounded-lg shadow-lg p-8">
                 <EditForm Model="productInput" OnValidSubmit="HandleValidSubmit" FormName="editProduct" class="space-y-8">
                     <DataAnnotationsValidator />
 
-                   
                     <div>
                         <h2 class="text-xl font-semibold text-gray-900 mb-4">
                             <i class="fas fa-info-circle text-green-600 mr-2"></i>Información Básica
@@ -121,7 +120,6 @@ else
                         </div>
                     </div>
 
-                    
                     <div>
                         <h2 class="text-xl font-semibold text-gray-900 mb-4">
                             <i class="fas fa-seedling text-green-600 mr-2"></i>Detalles de Vegetales
@@ -165,7 +163,7 @@ else
                         </div>
                     </div>
 
-                    
+
                     <div>
                         <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-between">
                             <span><i class="fas fa-tags text-green-600 mr-2"></i>Variaciones del Producto</span>
@@ -214,20 +212,27 @@ else
                         }
                     </div>
 
-                    
                     <div>
-                        <button type="submit"
-                                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
-                            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                                <i class="fas fa-save text-green-500 group-hover:text-green-400"></i>
-                            </span>
-                            Actualizar Producto
-                        </button>
+                        <div class="flex justify-between items-center gap-4">
+                            <button type="submit"
+                                    class="flex-1 group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
+                                <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                    <i class="fas fa-save text-green-500 group-hover:text-green-400"></i>
+                                </span>
+                                Actualizar Producto
+                            </button>
+                            <button type="button" @onclick="HandleDeleteProduct"
+                                    class="flex-1 group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out transform hover:scale-105">
+                                <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                    <i class="fas fa-trash-alt text-red-500 group-hover:text-red-400"></i>
+                                </span>
+                                Eliminar Producto
+                            </button>
+                        </div>
                     </div>
                 </EditForm>
             </div>
 
-            
             <div class="text-center mt-8">
                 <a href="/productos"
                    class="inline-flex items-center text-sm text-gray-600 hover:text-green-600 transition">
@@ -243,21 +248,21 @@ else
     [Parameter]
     public int ProductoId { get; set; }
 
-    private InputModel? productInput; 
-    private Proyecto_Final1.Productos.Producto? currentProduct; 
-    private IBrowserFile? selectedImageFile; 
+    private InputModel? productInput;
+    private Proyecto_Final1.Productos.Producto? currentProduct;
+    private IBrowserFile? selectedImageFile;
     private bool isLoading = true;
 
     private string? successMessage;
     private string? errorMessage;
 
-    
     private class InputModel
     {
         [Required(ErrorMessage = "El nombre del producto es obligatorio.")]
         [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
         public string Nombre { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "La descripcion es obligatoria.")]
         [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
         public string Descripcion { get; set; } = string.Empty;
 
@@ -265,15 +270,15 @@ else
         [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "El precio debe ser mayor que cero.")]
         public decimal Precio { get; set; }
 
-        
+
         [Required(ErrorMessage = "La imagen es obligatoria.")]
-        public string ImagenUrl { get; set; } = string.Empty; 
+        public string ImagenUrl { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El stock es obligatorio.")]
         [Range(0, int.MaxValue, ErrorMessage = "El stock no puede ser negativo.")]
         public int Stock { get; set; }
 
-        
+
         [Required(ErrorMessage = "La categoría es obligatoria.")]
         public string Categoria { get; set; } = string.Empty;
 
@@ -290,10 +295,10 @@ else
         public List<VariacionInputModel> Variaciones { get; set; } = new();
     }
 
-    
+
     private class VariacionInputModel
     {
-        public int VariacionId { get; set; } 
+        public int VariacionId { get; set; }
 
         [Required(ErrorMessage = "El nombre de la variación es obligatorio.")]
         public string NombreVariacion { get; set; } = string.Empty;
@@ -319,7 +324,7 @@ else
             {
                 errorMessage = "Producto no encontrado.";
                 Logger.LogWarning("Intento de editar un producto con ID {ProductoId} que no existe.", ProductoId);
-                
+
             }
             else
             {
@@ -328,7 +333,7 @@ else
                         Nombre = currentProduct.Nombre,
                         Descripcion = currentProduct.Descripcion,
                         Precio = currentProduct.Precio,
-                        ImagenUrl = currentProduct.ImagenUrl, 
+                        ImagenUrl = currentProduct.ImagenUrl,
                         Stock = currentProduct.Stock,
                         Categoria = currentProduct.Categoria,
                         Origen = currentProduct.Origen,
@@ -357,7 +362,7 @@ else
         }
     }
 
-    
+
     private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
         errorMessage = null;
@@ -380,7 +385,7 @@ else
         }
     }
 
-    
+
     private void AddVariation()
     {
         if (productInput != null)
@@ -389,31 +394,30 @@ else
         }
     }
 
-    
+
     private void RemoveVariation(VariacionInputModel variation)
     {
         if (productInput != null)
         {
             productInput.Variaciones.Remove(variation);
-           
+
             if (variation.VariacionId != 0)
             {
-                
                 var dbVariation = DbContext.ProductoVariaciones.Local.FirstOrDefault(v => v.VariacionId == variation.VariacionId);
-                if (dbVariation == null) 
+                if (dbVariation == null)
                 {
                     dbVariation = DbContext.ProductoVariaciones.FirstOrDefault(v => v.VariacionId == variation.VariacionId);
                 }
 
                 if (dbVariation != null)
                 {
-                    DbContext.ProductoVariaciones.Remove(dbVariation); 
+                    DbContext.ProductoVariaciones.Remove(dbVariation);
                 }
             }
         }
     }
 
-    
+
     private async Task HandleValidSubmit()
     {
         successMessage = null;
@@ -427,7 +431,6 @@ else
 
         try
         {
-            
             if (selectedImageFile != null)
             {
                 var uploadsFolder = Path.Combine(WebHostEnvironment.WebRootPath, "images", "productos");
@@ -436,7 +439,6 @@ else
                     Directory.CreateDirectory(uploadsFolder);
                 }
 
-                
                 if (!string.IsNullOrEmpty(currentProduct.ImagenUrl) && currentProduct.ImagenUrl.StartsWith("/images/productos/"))
                 {
                     var oldFilePath = Path.Combine(WebHostEnvironment.WebRootPath, currentProduct.ImagenUrl.TrimStart('/'));
@@ -458,13 +460,13 @@ else
                 currentProduct.ImagenUrl = $"/images/productos/{uniqueFileName}";
                 Logger.LogInformation("Nueva imagen guardada: {NewImagePath}", currentProduct.ImagenUrl);
             }
-           
+
             else if (string.IsNullOrEmpty(currentProduct.ImagenUrl))
             {
                 currentProduct.ImagenUrl = "/images/productos/default_placeholder.png";
             }
 
-           
+
             currentProduct.Nombre = productInput.Nombre;
             currentProduct.Descripcion = productInput.Descripcion;
             currentProduct.Precio = productInput.Precio;
@@ -475,39 +477,37 @@ else
             currentProduct.EsOrganicoCertificado = productInput.EsOrganicoCertificado;
             currentProduct.Temporada = productInput.Temporada;
 
-            
+
             var variationsToRemove = currentProduct.Variaciones
                 .Where(v => !productInput.Variaciones.Any(iv => iv.VariacionId == v.VariacionId && iv.VariacionId != 0))
                 .ToList();
             foreach (var variation in variationsToRemove)
             {
-                
-                if (variation.VariacionId != 0) 
+                if (variation.VariacionId != 0)
                 {
-                    
                     var dbVariation = DbContext.ProductoVariaciones.Local.FirstOrDefault(v => v.VariacionId == variation.VariacionId);
-                    if (dbVariation == null) 
+                    if (dbVariation == null)
                     {
                         dbVariation = await DbContext.ProductoVariaciones.FirstOrDefaultAsync(v => v.VariacionId == variation.VariacionId);
                     }
                     if (dbVariation != null)
                     {
-                        DbContext.ProductoVariaciones.Remove(dbVariation); 
+                        DbContext.ProductoVariaciones.Remove(dbVariation);
                     }
                 }
             }
 
-            
+
             foreach (var inputVariation in productInput.Variaciones)
             {
                 if (string.IsNullOrWhiteSpace(inputVariation.NombreVariacion) ||
-                   string.IsNullOrWhiteSpace(inputVariation.ValorVariacion))
+                    string.IsNullOrWhiteSpace(inputVariation.ValorVariacion))
                 {
                     errorMessage = "Todas las variaciones deben tener Nombre y Valor.";
                     return;
                 }
 
-                if (inputVariation.VariacionId != 0) 
+                if (inputVariation.VariacionId != 0)
                 {
                     var existingVariation = currentProduct.Variaciones.FirstOrDefault(v => v.VariacionId == inputVariation.VariacionId);
                     if (existingVariation != null)
@@ -516,9 +516,8 @@ else
                         existingVariation.ValorVariacion = inputVariation.ValorVariacion;
                         existingVariation.PrecioAdicional = inputVariation.PrecioAdicional;
                     }
-                    else 
+                    else
                     {
-                        
                         currentProduct.Variaciones.Add(new ProductoVariacion
                             {
                                 ProductoId = currentProduct.ProductoId,
@@ -528,7 +527,7 @@ else
                             });
                     }
                 }
-                else 
+                else
                 {
                     currentProduct.Variaciones.Add(new ProductoVariacion
                         {
@@ -540,16 +539,16 @@ else
                 }
             }
 
-           
-            await DbContext.SaveChangesAsync(); 
+
+            await DbContext.SaveChangesAsync();
 
             successMessage = $"Producto '{currentProduct.Nombre}' actualizado exitosamente.";
             Logger.LogInformation("Producto actualizado: {ProductName} (ID: {ProductId})", currentProduct.Nombre, currentProduct.ProductoId);
 
-            
+
             selectedImageFile = null;
-           
-            await OnInitializedAsync(); 
+
+            await OnInitializedAsync();
 
             StateHasChanged();
         }
@@ -567,6 +566,52 @@ else
         {
             errorMessage = "Error inesperado al actualizar el producto.";
             Logger.LogError(ex, "Error inesperado al actualizar el producto: {ExMessage}", ex.Message);
+        }
+    }
+
+    private async Task HandleDeleteProduct()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"¿Estás seguro de que quieres eliminar el producto '{currentProduct.Nombre}'?");
+
+        if (confirmed && currentProduct != null)
+        {
+            try
+            {
+                // Eliminar variaciones asociadas
+                if (currentProduct.Variaciones != null)
+                {
+                    DbContext.ProductoVariaciones.RemoveRange(currentProduct.Variaciones);
+                }
+
+                // Eliminar el producto de la base de datos
+                DbContext.Productos.Remove(currentProduct);
+                await DbContext.SaveChangesAsync();
+
+                // Eliminar el archivo de imagen si no es la imagen por defecto
+                if (!string.IsNullOrEmpty(currentProduct.ImagenUrl) && !currentProduct.ImagenUrl.EndsWith("default_placeholder.png"))
+                {
+                    var imagePath = Path.Combine(WebHostEnvironment.WebRootPath, currentProduct.ImagenUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        System.IO.File.Delete(imagePath);
+                        Logger.LogInformation("Imagen del producto eliminada: {ImagePath}", imagePath);
+                    }
+                }
+
+                successMessage = "Producto eliminado exitosamente.";
+                Logger.LogInformation("Producto eliminado: {ProductName} (ID: {ProductId})", currentProduct.Nombre, currentProduct.ProductoId);
+
+                // Redirigir al usuario a la página de la lista de productos
+                NavigationManager.NavigateTo("/productos");
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "Error al eliminar el producto. Inténtalo de nuevo.";
+                Logger.LogError(ex, "Error al eliminar el producto con ID {ProductId}", currentProduct.ProductoId);
+            }
         }
     }
 }
