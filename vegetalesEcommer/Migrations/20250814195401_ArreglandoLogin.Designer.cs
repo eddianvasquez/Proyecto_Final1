@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proyecto_Final1.Data;
 
@@ -11,9 +12,11 @@ using Proyecto_Final1.Data;
 namespace Proyecto_Final1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250814195401_ArreglandoLogin")]
+    partial class ArreglandoLogin
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -295,75 +298,6 @@ namespace Proyecto_Final1.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Proyecto_Final1.Models.Usuarios.Consulta", b =>
-                {
-                    b.Property<int>("ConsultaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConsultaId"));
-
-                    b.Property<string>("Asunto")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("FechaEnvio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Mensaje")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("UsuarioId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("ConsultaId");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("Consultas");
-                });
-
-            modelBuilder.Entity("Proyecto_Final1.Models.Usuarios.Preguntas", b =>
-                {
-                    b.Property<int>("PreguntaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PreguntaId"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<DateTime>("FechaEnvio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Question")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("UsuarioId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("PreguntaId");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("Preguntas");
                 });
 
             modelBuilder.Entity("Proyecto_Final1.Pedidos.DetallePedidos", b =>
@@ -668,28 +602,6 @@ namespace Proyecto_Final1.Migrations
                     b.Navigation("Carrito");
 
                     b.Navigation("Producto");
-                });
-
-            modelBuilder.Entity("Proyecto_Final1.Models.Usuarios.Consulta", b =>
-                {
-                    b.HasOne("Proyecto_Final1.Data.ApplicationUser", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Usuario");
-                });
-
-            modelBuilder.Entity("Proyecto_Final1.Models.Usuarios.Preguntas", b =>
-                {
-                    b.HasOne("Proyecto_Final1.Data.ApplicationUser", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Proyecto_Final1.Pedidos.DetallePedidos", b =>
