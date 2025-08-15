@@ -1,0 +1,271 @@
+﻿@page "/Admin/Preguntas"
+@using Proyecto_Final1.Data
+@using Proyecto_Final1.Models.Usuarios
+@using Microsoft.EntityFrameworkCore
+@using System.Globalization
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+@inject ApplicationDbContext DbContext
+@inject ILogger<AdminPregunta> Logger
+@inject NavigationManager NavigationManager
+
+<PageTitle>Administrar Preguntas</PageTitle>
+
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-gray-900">
+                <i class="fas fa-question-circle text-green-600 mr-3"></i>Administrar Preguntas
+            </h1>
+            <p class="mt-2 text-lg text-gray-600">Revisa, edita y elimina las preguntas enviadas por los usuarios.</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <div class="flex flex-col md:flex-row items-center justify-between mb-6 space-y-4 md:space-y-0">
+                <div class="w-full md:w-1/2">
+                    <label for="fechaFiltro" class="block text-sm font-medium text-gray-700">Filtrar por Fecha</label>
+                    <InputDate @bind-Value="fechaFiltro"
+                               id="fechaFiltro"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" />
+                </div>
+                <div class="w-full md:w-1/3">
+                    <button @onclick="AplicarFiltro"
+                            class="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                        <i class="fas fa-filter mr-2"></i>Aplicar Filtro
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pregunta</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @if (preguntas == null)
+                        {
+                            <tr><td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-500">Cargando preguntas...</td></tr>
+                        }
+                        else if (!preguntas.Any())
+                        {
+                            <tr><td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-500">No hay preguntas para mostrar.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var pregunta in preguntas)
+                            {
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@pregunta.PreguntaId</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div class="font-semibold">@pregunta.Name</div>
+                                        <div class="text-xs text-gray-400">@pregunta.Email</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@pregunta.FechaEnvio.ToShortDateString()</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 max-w-sm overflow-hidden text-ellipsis">@pregunta.Question</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button @onclick="() => IniciarEdicion(pregunta)" class="text-blue-600 hover:text-blue-900 transition">
+                                            <i class="fas fa-edit mr-1"></i>Editar
+                                        </button>
+                                        <button @onclick="() => IniciarEliminacion(pregunta.PreguntaId)" class="ml-2 text-red-600 hover:text-red-900 transition">
+                                            <i class="fas fa-trash-alt mr-1"></i>Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (preguntaEnEdicion != null)
+{
+    <div class="fixed z-10 inset-0 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Editar Pregunta
+                            </h3>
+                            <div class="mt-4">
+                                <EditForm Model="preguntaEnEdicion" OnValidSubmit="GuardarEdicion">
+                                    <DataAnnotationsValidator />
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                                        <InputText @bind-Value="preguntaEnEdicion.Name" class="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700">Correo</label>
+                                        <InputText @bind-Value="preguntaEnEdicion.Email" class="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700">Pregunta</label>
+                                        <InputTextArea @bind-Value="preguntaEnEdicion.Question" class="mt-1 block w-full border border-gray-300 rounded-md p-2" rows="4" />
+                                    </div>
+                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                            Guardar
+                                        </button>
+                                        <button @onclick="CancelarEdicion" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (preguntaAEliminarId != null)
+{
+    <div class="fixed z-10 inset-0 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                Confirmar Eliminación
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">¿Estás seguro de que quieres eliminar esta pregunta? Esta acción no se puede deshacer.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @onclick="EliminarPregunta" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Eliminar
+                    </button>
+                    <button @onclick="CancelarEliminacion" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private List<Preguntas>? preguntas;
+    private Preguntas? preguntaEnEdicion;
+    private int? preguntaAEliminarId;
+    private DateTime? fechaFiltro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPreguntasAsync();
+    }
+
+    private async Task CargarPreguntasAsync()
+    {
+        try
+        {
+            var query = DbContext.Preguntas.Include(p => p.Usuario).AsQueryable();
+
+            if (fechaFiltro.HasValue)
+            {
+                // Se filtra por la fecha seleccionada
+                query = query.Where(p => p.FechaEnvio.Date == fechaFiltro.Value.Date);
+            }
+
+            preguntas = await query.OrderByDescending(p => p.FechaEnvio).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar las preguntas.");
+        }
+    }
+
+    private async Task AplicarFiltro()
+    {
+        await CargarPreguntasAsync();
+    }
+
+    private void IniciarEdicion(Preguntas pregunta)
+    {
+        preguntaEnEdicion = new Preguntas
+            {
+                PreguntaId = pregunta.PreguntaId,
+                UsuarioId = pregunta.UsuarioId,
+                Name = pregunta.Name,
+                Email = pregunta.Email,
+                Question = pregunta.Question,
+                FechaEnvio = pregunta.FechaEnvio
+            };
+    }
+
+    private async Task GuardarEdicion()
+    {
+        if (preguntaEnEdicion != null)
+        {
+            var preguntaOriginal = await DbContext.Preguntas.FindAsync(preguntaEnEdicion.PreguntaId);
+            if (preguntaOriginal != null)
+            {
+                preguntaOriginal.Name = preguntaEnEdicion.Name;
+                preguntaOriginal.Email = preguntaEnEdicion.Email;
+                preguntaOriginal.Question = preguntaEnEdicion.Question;
+                await DbContext.SaveChangesAsync();
+                preguntaEnEdicion = null; // Cierra el modal
+                await CargarPreguntasAsync(); // Actualiza la lista
+            }
+        }
+    }
+
+    private void CancelarEdicion()
+    {
+        preguntaEnEdicion = null;
+    }
+
+    private void IniciarEliminacion(int id)
+    {
+        preguntaAEliminarId = id;
+    }
+
+    private async Task EliminarPregunta()
+    {
+        if (preguntaAEliminarId.HasValue)
+        {
+            try
+            {
+                var pregunta = await DbContext.Preguntas.FindAsync(preguntaAEliminarId.Value);
+                if (pregunta != null)
+                {
+                    DbContext.Preguntas.Remove(pregunta);
+                    await DbContext.SaveChangesAsync();
+                    await CargarPreguntasAsync(); // Actualiza la lista
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error al eliminar la pregunta con ID {Id}", preguntaAEliminarId.Value);
+            }
+        }
+        preguntaAEliminarId = null; // Cierra el modal
+    }
+
+    private void CancelarEliminacion()
+    {
+        preguntaAEliminarId = null;
+    }
+}

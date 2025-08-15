@@ -1,0 +1,123 @@
+﻿@page "/VerDetallePedido/{PedidoId:int}"
+@using Proyecto_Final1.Data
+@using Proyecto_Final1.Pedidos
+@using Proyecto_Final1.Productos
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+
+<PageTitle>Detalles del Pedido</PageTitle>
+
+@if (isLoading)
+{
+    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-green-600 mb-4"></i>
+            <p class="text-lg font-medium text-gray-700">Cargando detalles del pedido...</p>
+        </div>
+    </div>
+}
+else if (pedido == null)
+{
+    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+            <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800">Pedido no encontrado</h3>
+            <p class="mt-2 text-gray-600">El pedido que buscas no existe o no tienes permiso para verlo.</p>
+            <a href="/Pedidos" class="mt-4 inline-block px-6 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 transition">
+                <i class="fas fa-arrow-left mr-2"></i>Volver a mis pedidos
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-start justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl w-full space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">Detalles del Pedido #@pedido.PedidoId</h2>
+                <p class="mt-2 text-sm text-gray-600">Realizado el @pedido.FechaPedido.ToShortDateString()</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+                <div class="border-b pb-4">
+                    <h3 class="text-xl font-bold text-gray-900">Productos del Pedido</h3>
+                    @foreach (var detalle in pedido.Detalles!)
+                    {
+                        <div class="flex justify-between items-center mt-4">
+                            <div class="flex items-center space-x-4">
+                                @if (detalle.Producto != null)
+                                {
+                                    <img src="@detalle.Producto.ImagenUrl" alt="@detalle.Producto.Nombre" class="w-16 h-16 object-cover rounded-md border border-gray-200" />
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-900">@detalle.Producto.Nombre</h4>
+                                        <p class="text-sm text-green-600 font-semibold mt-1">@detalle.Producto.Precio.ToString("C") x @detalle.Cantidad</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-gray-500">Producto no disponible</p>
+                                }
+                            </div>
+                            <div class="text-right">
+                                <p class="text-gray-900 font-medium">@((detalle.PrecioUnitario * detalle.Cantidad).ToString("C"))</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-xl font-bold text-gray-900">Resumen y Envío</h3>
+                    <div class="flex justify-between items-center text-gray-700">
+                        <span>Subtotal</span>
+                        <span class="font-medium">@pedido.Total.ToString("C")</span>
+                    </div>
+                    <div class="flex justify-between items-center text-gray-700">
+                        <span>Estado</span>
+                        <span class="font-bold @(pedido.Estado == "Completado" ? "text-green-500" : "text-yellow-500")">@pedido.Estado</span>
+                    </div>
+                    <div class="flex justify-between items-center text-gray-700">
+                        <span>Dirección de Envío</span>
+                        <span>@(pedido.DireccionDeEnvio?.Calle), @(pedido.DireccionDeEnvio?.Ciudad)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xl font-bold text-gray-900 border-t pt-4">
+                        <span>Total</span>
+                        <span>@pedido.Total.ToString("C")</span>
+                    </div>
+                </div>
+
+                <button @onclick="GoBackToPedidos"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition">
+                    Volver a mis pedidos
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int PedidoId { get; set; }
+
+    private Pedido? pedido;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pedido = await DbContext.Set<Pedido>()
+            .Include(p => p.Detalles)
+                .ThenInclude(d => d.Producto)
+            .Include(p => p.DireccionDeEnvio)
+            .FirstOrDefaultAsync(p => p.PedidoId == PedidoId);
+
+        isLoading = false;
+    }
+
+    private void GoBackToPedidos()
+    {
+        NavigationManager.NavigateTo("/Pedidos");
+    }
+}

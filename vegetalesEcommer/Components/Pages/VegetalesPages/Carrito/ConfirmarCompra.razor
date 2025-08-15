@@ -1,0 +1,24 @@
+﻿@page "/ConfirmacionCompra/{PedidoId:int}"
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-lg w-full text-center bg-white rounded-lg shadow-xl p-10 space-y-6">
+        <div class="flex justify-center">
+            <i class="fas fa-check-circle text-6xl text-green-500 animate-pulse"></i>
+        </div>
+        <h2 class="text-3xl font-extrabold text-gray-900">¡Compra Finalizada!</h2>
+        <p class="mt-2 text-lg text-gray-600">
+            Tu pedido ha sido procesado con éxito.
+        </p>
+        <p class="text-sm text-gray-500">
+            El número de tu pedido es **#@PedidoId**. Te enviaremos un correo electrónico de confirmación con los detalles del envío.
+        </p>
+        <a href="/" class="mt-6 inline-block px-8 py-3 text-white bg-green-600 rounded-full hover:bg-green-700 transition transform hover:scale-105">
+            <i class="fas fa-home mr-2"></i>Volver a la tienda
+        </a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int PedidoId { get; set; }
+}
