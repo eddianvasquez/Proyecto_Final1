@@ -1,5 +1,212 @@
-﻿<h3>ReporteVentas</h3>
+﻿@page "/reportes/ventas"
+@using Proyecto_Final1.Pedidos
+@using Proyecto_Final1.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@inject ApplicationDbContext Context
+@inject IJSRuntime JSRuntime 
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Reporte de Ventas</PageTitle>
+
+<style>
+    /* Estilos para impresión */
+    @@media print {
+        .no-print {
+            display: none !important; /* Oculta elementos que no deben imprimirse */
+        }
+
+        /* Opcional: Ajusta el ancho de la tabla si es necesario para la impresión */
+        table {
+            width: 100%;
+        }
+
+        /* Opcional: Ajusta márgenes para la impresión */
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        main {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<main class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-8 text-center no-print">Reporte de Ventas</h1>
+    <h1 class="text-4xl md::text-5xl font-bold text-gray-800 mb-8 text-center print-only">Reporte de Ventas</h1>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow-sm no-print" role="alert">
+            <p class="font-bold">Error:</p>
+            <p>@errorMessage</p>
+        </div>
+    }
+
+    <div class="bg-white p-6 rounded-lg shadow-lg mb-8 no-print"> @* Añadir clase no-print a la sección de filtros *@
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Filtrar Ventas</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label for="filterStartDate" class="block text-sm font-medium text-gray-700">Fecha de Inicio:</label>
+                <input type="date" id="filterStartDate" @bind="filterDateStart" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+            </div>
+            <div>
+                <label for="filterEndDate" class="block text-sm font-medium text-gray-700">Fecha Fin:</label>
+                <input type="date" id="filterEndDate" @bind="filterDateEnd" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+            </div>
+            <div>
+                <label for="filterEstado" class="block text-sm font-medium text-gray-700">Filtrar por Estado:</label>
+                <select id="filterEstado" @bind="filterEstado" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    <option value="">Todos los Estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Procesando">Procesando</option>
+                    <option value="Enviado">Enviado</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+            <div class="flex space-x-2 mt-4 md:mt-0">
+                <button @onclick="ApplyFilter" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out transform hover:scale-105 flex-grow">
+                    <i class="fas fa-filter mr-2"></i>Aplicar Filtro
+                </button>
+                <button @onclick="ClearFilter" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out transform hover:scale-105 flex-grow">
+                    <i class="fas fa-times mr-2"></i>Limpiar Filtro
+                </button>
+                <button @onclick="PrintReport" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out transform hover:scale-105 flex-grow">
+                    <i class="fas fa-print mr-2"></i>Imprimir Reporte
+                </button>
+            </div>
+        </div>
+        <div class="mt-6 p-4 bg-blue-50 rounded-md text-blue-800">
+            <p class="text-lg font-semibold">Total de Ventas Filtradas: $@totalVentas.ToString("N2")</p>
+        </div>
+    </div>
+
+    @if (pedidos == null)
+    {
+        <p class="text-center text-gray-600">Cargando ventas...</p>
+    }
+    else if (!pedidos.Any())
+    {
+        <p class="text-center text-gray-600">No hay ventas disponibles para el período y filtro seleccionado.</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto bg-white rounded-lg shadow-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario (ID)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Pedido</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección de Envío</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var pedido in pedidos)
+                    {
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@pedido.PedidoId</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @(pedido.Usuario?.UserName ?? "Usuario Desconocido") (@pedido.UsuarioId)
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@pedido.FechaPedido.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$@pedido.Total.ToString("N2")</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@pedido.Estado</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                @(pedido.DireccionDeEnvio != null ? $"{pedido.DireccionDeEnvio.Calle}, {pedido.DireccionDeEnvio.Ciudad}, {pedido.DireccionDeEnvio.CodigoPostal}" : "N/A")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</main>
 
 @code {
+    private List<Pedido> pedidos;
+    private DateTime? filterDateStart;
+    private DateTime? filterDateEnd;
+    private string filterEstado = ""; // Nuevo campo para el filtro de estado
+    private string errorMessage;
+    private decimal totalVentas;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPedidos();
+    }
+
+    private async Task LoadPedidos()
+    {
+        try
+        {
+            IQueryable<Pedido> query = Context.Pedidos
+                                            .Include(p => p.Usuario)
+                                            .Include(p => p.DireccionDeEnvio)
+                                            .OrderByDescending(p => p.FechaPedido)
+                                            .AsQueryable();
+
+            // Aplicar filtro de fecha de inicio
+            if (filterDateStart.HasValue)
+            {
+                query = query.Where(p => p.FechaPedido.Date >= filterDateStart.Value.Date);
+            }
+
+            // Aplicar filtro de fecha de fin
+            if (filterDateEnd.HasValue)
+            {
+                query = query.Where(p => p.FechaPedido.Date <= filterDateEnd.Value.Date);
+            }
+
+            // Aplicar filtro de estado (si se ha seleccionado uno)
+            if (!string.IsNullOrEmpty(filterEstado))
+            {
+                query = query.Where(p => p.Estado == filterEstado);
+            }
+            // Si no hay filtro de estado y no hay fechas, y no se ha especificado nada,
+            // la lógica original filtraba por "Entregado".
+            // He quitado el filtro 'Where(p => p.Estado == "Entregado")' por defecto
+            // para que "Todos los Estados" realmente muestre todos los estados si no hay filtro de estado seleccionado.
+            // Si quieres que el reporte SIEMPRE empiece mostrando solo "Entregado",
+            // tendrías que añadir un 'else if (string.IsNullOrEmpty(filterEstado))' y aplicar ese filtro.
+
+
+            pedidos = await query.ToListAsync();
+
+            // Calcular el total de ventas filtradas (de los pedidos mostrados)
+            totalVentas = pedidos.Sum(p => p.Total);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar el reporte de ventas: {ex.Message}";
+            Console.WriteLine($"Error al cargar el reporte de ventas: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyFilter()
+    {
+        errorMessage = string.Empty;
+        await LoadPedidos();
+    }
+
+    private async Task ClearFilter()
+    {
+        filterDateStart = null;
+        filterDateEnd = null;
+        filterEstado = ""; // Reiniciar el filtro de estado
+        errorMessage = string.Empty;
+        await LoadPedidos();
+    }
+
+    // Función para imprimir el reporte
+    private async Task PrintReport()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
 }
