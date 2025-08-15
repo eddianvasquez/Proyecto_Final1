@@ -11,7 +11,7 @@
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject ILogger<EditarProducto> Logger
-@inject IWebHostEnvironment WebHostEnvironment // Inyectar para acceder a wwwroot
+@inject IWebHostEnvironment WebHostEnvironment 
 
 @attribute [Authorize(Roles = "Admin")] 
 @if (isLoading)
@@ -258,6 +258,7 @@ else
         [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
         public string Nombre { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "La descripcion es obligatoria.")]
         [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
         public string Descripcion { get; set; } = string.Empty;
 

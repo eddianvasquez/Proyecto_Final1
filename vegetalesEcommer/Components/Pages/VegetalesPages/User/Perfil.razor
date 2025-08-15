@@ -736,13 +736,18 @@
     {
         [Required(ErrorMessage = "El nombre es obligatorio.")]
         [MaxLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+            ErrorMessage = "El nombre solo puede contener letras y espacios.")]
         public string Nombre { get; set; } = "";
 
         [Required(ErrorMessage = "El apellido es obligatorio.")]
         [MaxLength(100, ErrorMessage = "El apellido no puede exceder los 100 caracteres.")]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+            ErrorMessage = "El apellido solo puede contener letras y espacios.")]
         public string Apellido { get; set; } = "";
 
         [Phone(ErrorMessage = "Formato de teléfono inválido.")]
+        [StringLength(20, ErrorMessage = "El número de teléfono no puede exceder los 20 caracteres.")]
         public string PhoneNumber { get; set; } = "";
 
         [Display(Name = "Fecha de Nacimiento")]
@@ -753,21 +758,35 @@
     {
         [Required(ErrorMessage = "La calle es obligatoria.")]
         [MaxLength(200, ErrorMessage = "La calle no puede exceder los 200 caracteres.")]
+        [RegularExpression(@"^[a-zA-Z0-9\s#\-.,áéíóúÁÉÍÓÚñÑ]+$",
+            ErrorMessage = "La calle solo puede contener letras, números, espacios y los caracteres #-,.")]
         public string Calle { get; set; } = "";
 
+        [Required(ErrorMessage = "La ciudad es obligatoria.")]
         [MaxLength(100, ErrorMessage = "La ciudad no puede exceder los 100 caracteres.")]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+            ErrorMessage = "La ciudad solo puede contener letras y espacios.")]
         public string Ciudad { get; set; } = "";
 
+        [Required(ErrorMessage = "El estado/provincia es obligatorio.")]
         [MaxLength(100, ErrorMessage = "El estado no puede exceder los 100 caracteres.")]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+            ErrorMessage = "El estado solo puede contener letras y espacios.")]
         public string Estado { get; set; } = "";
 
+        [Required(ErrorMessage = "El código postal es obligatorio.")]
         [MaxLength(20, ErrorMessage = "El código postal no puede exceder los 20 caracteres.")]
+        [RegularExpression(@"^[a-zA-Z0-9\-]+$",
+            ErrorMessage = "El código postal solo puede contener letras, números y guiones.")]
         public string CodigoPostal { get; set; } = "";
 
+        [Required(ErrorMessage = "El país es obligatorio.")]
         [MaxLength(100, ErrorMessage = "El país no puede exceder los 100 caracteres.")]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+            ErrorMessage = "El país solo puede contener letras y espacios.")]
         public string Pais { get; set; } = "";
 
-        public bool EsDefault { get; set; }
+        public bool EsDefault { get; set; } = false;
     }
 
     #endregion

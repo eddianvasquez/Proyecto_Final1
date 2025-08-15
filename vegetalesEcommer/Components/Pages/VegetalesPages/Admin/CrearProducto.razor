@@ -14,7 +14,7 @@
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject ILogger<CrearProducto> Logger
-@inject IWebHostEnvironment WebHostEnvironment // Inyectar para acceder a wwwroot
+@inject IWebHostEnvironment WebHostEnvironment 
 
 <PageTitle>Crear Nuevo Producto - Mercado Orgánico</PageTitle>
 
@@ -228,6 +228,7 @@
         [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
         public string Nombre { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "La descripcion es obligatoria.")]
         [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
         public string Descripcion { get; set; } = string.Empty;
 
@@ -243,7 +244,6 @@
         [Range(0, int.MaxValue, ErrorMessage = "El stock no puede ser negativo.")]
         public int Stock { get; set; }
 
-        
         [Required(ErrorMessage = "La categoría es obligatoria.")]
         public string Categoria { get; set; } = string.Empty;
 
@@ -255,6 +255,7 @@
 
         public bool EsOrganicoCertificado { get; set; }
 
+        [Required(ErrorMessage = "La temporada es obligatoria.")]
         public string? Temporada { get; set; } 
 
         public List<VariacionInputModel> Variaciones { get; set; } = new();
