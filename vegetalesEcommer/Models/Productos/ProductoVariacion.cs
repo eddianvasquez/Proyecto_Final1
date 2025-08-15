@@ -10,8 +10,6 @@ namespace Proyecto_Final1.Productos
         public string NombreVariacion { get; set; }
         public string ValorVariacion { get; set; }
         public decimal PrecioAdicional { get; set; }
-
-        
         public virtual Producto Producto { get; set; }
     }
 }

@@ -11,8 +11,12 @@
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject ILogger<EditarProducto> Logger
+
 @inject IWebHostEnvironment WebHostEnvironment
 @inject IJSRuntime JSRuntime
+
+@inject IWebHostEnvironment WebHostEnvironment 
+
 
 @attribute [Authorize(Roles = "Admin")]
 @if (isLoading)
