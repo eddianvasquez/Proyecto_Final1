@@ -1,0 +1,179 @@
+﻿@page "/CompraFinalizada/{PedidoId:int}"
+@using Proyecto_Final1.Data
+@using Proyecto_Final1.Pedidos
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Finalizar Compra - Mercado Orgánico</PageTitle>
+
+@if (isLoading)
+{
+    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-green-600 mb-4"></i>
+            <p class="text-lg font-medium text-gray-700">Cargando detalles del pedido...</p>
+        </div>
+    </div>
+}
+else if (pedido == null)
+{
+    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+            <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800">Pedido no encontrado</h3>
+            <p class="mt-2 text-gray-600">El pedido que buscas no existe o ha ocurrido un error.</p>
+            <a href="/" class="mt-4 inline-block px-6 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 transition">
+                <i class="fas fa-home mr-2"></i>Ir a la tienda
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl w-full space-y-8">
+            <div class="text-center">
+                <i class="fas fa-credit-card text-4xl text-green-600 mb-2"></i>
+                <h2 class="text-3xl font-extrabold text-gray-900">Finalizar Compra</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Pedido #@pedido.PedidoId
+                </p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+                <div class="border-b pb-4">
+                    <h3 class="text-xl font-bold text-gray-900">Resumen del Pedido</h3>
+                    <div class="flex justify-between items-center text-gray-700 mt-2">
+                        <span>Productos</span>
+                        <span class="font-medium">@pedido.Total.ToString("C")</span>
+                    </div>
+                    <div class="flex justify-between items-center text-gray-700">
+                        <span>Envío</span>
+                        <span class="font-medium">Gratis</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xl font-bold text-gray-900 border-t pt-4 mt-4">
+                        <span>Total a Pagar</span>
+                        <span>@pedido.Total.ToString("C")</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-bold text-gray-900">Información de Pago</h3>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm" role="alert">
+                            <i class="fas fa-exclamation-circle mr-2"></i>@errorMessage
+                        </div>
+                    }
+
+                    <div class="space-y-2">
+                        <label for="cardNumber" class="block text-sm font-medium text-gray-700">Número de Tarjeta</label>
+                        <input id="cardNumber" @bind="cardNumber" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="XXXX-XXXX-XXXX-XXXX" required />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label for="expiryDate" class="block text-sm font-medium text-gray-700">Fecha de Vencimiento</label>
+                            <input id="expiryDate" @bind="expiryDate" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="MM/AA" required />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="cvv" class="block text-sm font-medium text-gray-700">CVV</label>
+                            <input id="cvv" @bind="cvv" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="XXX" required />
+                        </div>
+                    </div>
+                </div>
+
+                <button @onclick="ProcessPayment"
+                        disabled="@(isProcessing)"
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                    @if (isProcessing)
+                    {
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        <span>Procesando pago...</span>
+                    }
+                    else
+                    {
+                        <span>Pagar Ahora</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int PedidoId { get; set; }
+
+    private Pedido? pedido;
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private string? errorMessage;
+
+    // Campos del formulario de tarjeta
+    private string? cardNumber;
+    private string? expiryDate;
+    private string? cvv;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pedido = await DbContext.Set<Pedido>()
+            .Include(p => p.Detalles)
+            .FirstOrDefaultAsync(p => p.PedidoId == PedidoId);
+
+        if (pedido == null)
+        {
+            await ShowErrorAndRedirect("El pedido que intentas pagar no existe. Serás redirigido a la tienda.");
+            return;
+        }
+
+        isLoading = false;
+    }
+
+    private async Task ProcessPayment()
+    {
+        isProcessing = true;
+        errorMessage = null;
+
+        // Validación simple de los campos
+        if (string.IsNullOrEmpty(cardNumber) || string.IsNullOrEmpty(expiryDate) || string.IsNullOrEmpty(cvv))
+        {
+            errorMessage = "Por favor, completa todos los campos de la tarjeta.";
+            isProcessing = false;
+            return;
+        }
+
+        try
+        {
+            // Simulación del proceso de pago
+            await Task.Delay(2000); // Simula una llamada a un servicio de pago
+
+            // Si el pago es exitoso
+            pedido!.Estado = "Completado";
+            DbContext.Set<Pedido>().Update(pedido);
+            await DbContext.SaveChangesAsync();
+
+            // Redirigir a una página de confirmación de éxito
+            NavigationManager.NavigateTo($"/ConfirmacionCompra/{pedido.PedidoId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Hubo un problema al procesar el pago. Por favor, inténtalo de nuevo.";
+            Console.WriteLine($"Error de pago: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ShowErrorAndRedirect(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+        NavigationManager.NavigateTo("/");
+    }
+}

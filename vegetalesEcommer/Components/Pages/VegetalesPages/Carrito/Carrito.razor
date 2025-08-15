@@ -4,12 +4,23 @@
 @using System.Linq
 @using System.Threading.Tasks
 @using Microsoft.JSInterop
-@using Proyecto_Final1.Services 
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using Proyecto_Final1.Services
+@using Proyecto_Final1.Data
+@using Proyecto_Final1.Pedidos
+@using Proyecto_Final1.Usuarios
 
+@attribute [Authorize]
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
-@inject CartService CartService // Inject the shared CartService
-@implements IDisposable 
+@inject CartService CartService
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<Carrito> Logger
+@implements IDisposable
 
 <PageTitle>Carrito de Compras - Mercado Orgánico</PageTitle>
 
@@ -25,6 +36,13 @@
                 Revisa los productos que has añadido y procede a la compra
             </p>
         </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-circle mr-2"></i>@errorMessage
+            </div>
+        }
 
         @if (cartItems.Any())
         {
@@ -85,12 +103,44 @@
                         <span>@Subtotal.ToString("C")</span>
                     </div>
 
+                    @if (userAddresses?.Any() == true)
+                    {
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Dirección de Envío:</label>
+                            <select @bind="selectedAddressId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <option value="0">Selecciona una dirección</option>
+                                @foreach (var direccion in userAddresses)
+                                {
+                                    <option value="@direccion.DireccionId">
+                                        @direccion.Calle, @direccion.Ciudad @(direccion.EsDefault ? "(Predeterminada)" : "")
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Necesitas agregar una dirección de envío en tu <a href="/Perfil" class="font-medium underline">perfil</a> antes de proceder.
+                        </div>
+                    }
+
                     <button @onclick="ProceedToCheckout"
-                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
-                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="fas fa-credit-card text-green-500 group-hover:text-green-400"></i>
-                        </span>
-                        Proceder al Pago
+                            disabled="@(isProcessing || selectedAddressId == 0)"
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                        @if (isProcessing)
+                        {
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            <span>Procesando...</span>
+                        }
+                        else
+                        {
+                            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                <i class="fas fa-credit-card text-green-500 group-hover:text-green-400"></i>
+                            </span>
+                            <span>Proceder al Pago</span>
+                        }
                     </button>
                 </div>
             </div>
@@ -110,56 +160,128 @@
 </div>
 
 @code {
-    
     private List<CartItem> cartItems = new();
+    private List<DireccionDeEnvio>? userAddresses;
+    private ApplicationUser? currentUser;
+    private int selectedAddressId = 0;
+    private bool isProcessing = false;
+    private string? errorMessage;
 
-    
     private decimal Subtotal => cartItems.Sum(item => item.Price * item.Quantity);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        
+        await LoadUserData();
         cartItems = CartService.GetCartItems();
-        
         CartService.OnChange += UpdateCartDisplay;
     }
 
-    
+    private async Task LoadUserData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            currentUser = await UserManager.GetUserAsync(authState.User);
+            if (currentUser != null)
+            {
+                userAddresses = await DbContext.Set<DireccionDeEnvio>()
+                    .Where(d => d.UsuarioId == currentUser.Id)
+                    .OrderByDescending(d => d.EsDefault)
+                    .ToListAsync();
+
+                // Seleccionar automáticamente la dirección predeterminada
+                var defaultAddress = userAddresses.FirstOrDefault(d => d.EsDefault);
+                if (defaultAddress != null)
+                {
+                    selectedAddressId = defaultAddress.DireccionId;
+                }
+            }
+        }
+    }
+
     private void UpdateCartDisplay()
     {
-        cartItems = CartService.GetCartItems(); 
-        StateHasChanged(); 
+        cartItems = CartService.GetCartItems();
+        StateHasChanged();
     }
 
     private void IncreaseQuantity(int productId)
     {
-       
         CartService.IncreaseQuantity(productId);
-        
     }
 
     private void DecreaseQuantity(int productId)
     {
-        
         CartService.DecreaseQuantity(productId);
-        
     }
 
     private void RemoveItem(int productId)
     {
-       
         CartService.RemoveItem(productId);
-        
     }
 
-    private void ProceedToCheckout()
+    private async Task ProceedToCheckout()
     {
-        
-        CartService.ClearCart();
-        NavigationManager.NavigateTo("/CompraFinalizada");
+        if (selectedAddressId == 0)
+        {
+            errorMessage = "Por favor selecciona una dirección de envío.";
+            return;
+        }
+
+        if (currentUser == null)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = null;
+
+        try
+        {
+            // Crear el pedido
+            var pedido = new Pedido
+                {
+                    UsuarioId = currentUser.Id,
+                    FechaPedido = DateTime.Now,
+                    Total = Subtotal,
+                    Estado = "Pendiente",
+                    DireccionDeEnvioId = selectedAddressId,
+                    Detalles = new List<DetallePedidos>()
+                };
+
+            // Crear los detalles del pedido
+            foreach (var item in cartItems)
+            {
+                pedido.Detalles.Add(new DetallePedidos
+                    {
+                        ProductoId = item.ProductId,
+                        Cantidad = item.Quantity,
+                        PrecioUnitario = item.Price
+                    });
+            }
+
+            // Guardar en la base de datos
+            DbContext.Set<Pedido>().Add(pedido);
+            await DbContext.SaveChangesAsync();
+
+            // Limpiar el carrito
+            CartService.ClearCart();
+
+            // Redirigir a la página de compra finalizada con el ID del pedido
+            NavigationManager.NavigateTo($"/CompraFinalizada/{pedido.PedidoId}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al procesar la compra");
+            errorMessage = "Ocurrió un error al procesar tu compra. Por favor, inténtalo de nuevo.";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
     }
 
-    
     public void Dispose()
     {
         CartService.OnChange -= UpdateCartDisplay;
