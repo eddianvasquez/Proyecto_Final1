@@ -2,8 +2,10 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @using Proyecto_Final1.Components.Account
+@using Proyecto_Final1.Services
 @inject NavigationManager NavManager
 @inject IdentityRedirectManager RedirectManager
+@inject ProductosService ProductosService
 
 <nav class="bg-white shadow-md sticky top-0 z-50">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -15,47 +17,50 @@
         </div>
 
         <div class="hidden md:flex items-center space-x-6">
-            <!-- Botón de Inicio añadido -->
             <NavLink href="/" class="text-gray-700 hover:text-green-600 transition-colors" Match="NavLinkMatch.All">Inicio</NavLink>
             <NavLink href="/productos" class="text-gray-700 hover:text-green-600 transition-colors">Productos</NavLink>
             <NavLink href="/nosotros" class="text-gray-700 hover:text-green-600 transition-colors">Nosotros</NavLink>
             <NavLink href="/contacto" class="text-gray-700 hover:text-green-600 transition-colors">Contacto</NavLink>
         </div>
 
+        <div class="relative flex-grow mx-4 max-w-md">
+            <input type="text" @bind="searchTerm" @onkeyup="HandleSearch"
+                   class="w-full pl-10 pr-12 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
+                   placeholder="Buscar productos..." />
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            @if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                <button @onclick="ClearSearch" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fas fa-times"></i>
+                </button>
+            }
+        </div>
+
         <div class="flex items-center space-x-4">
-            <!-- Lógica de menú de administrador para el rol 'Admin' -->
             <AuthorizeView Roles="Admin">
                 <div class="relative">
                     <button @onclick="ToggleAdminMenu" class="text-green-700 hover:text-green-600 focus:outline-none transition-colors p-2">
-                        <!-- Ícono de hoja de "ojita" -->
                         <i class="fas fa-leaf text-xl"></i>
                     </button>
                     @if (showAdminMenu)
                     {
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                            <!-- Links a las páginas de administrador -->
-                            <NavLink href="/admin/CrearProducto" @onclick="ToggleAdminMenu"
-                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <NavLink href="/admin/CrearProducto" @onclick="ToggleAdminMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 Crear Producto
                             </NavLink>
-                            <NavLink href="/admin/EditarProducto" @onclick="ToggleAdminMenu"
-                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <NavLink href="/admin/EditarProducto" @onclick="ToggleAdminMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 Administrar Productos
                             </NavLink>
-                            <NavLink href="/reportes/ventas" @onclick="ToggleAdminMenu"
-                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <NavLink href="/reportes/ventas" @onclick="ToggleAdminMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 Reporte de Ventas
                             </NavLink>
-                            <NavLink href="/Admin/Preguntas" @onclick="ToggleAdminMenu"
-                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <NavLink href="/Admin/Preguntas" @onclick="ToggleAdminMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 Administrar Preguntas
                             </NavLink>
-                            <NavLink href="/admin/consultas" @onclick="ToggleAdminMenu"
-                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <NavLink href="/admin/consultas" @onclick="ToggleAdminMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 Administrar Consulta
                             </NavLink>
-                            <NavLink href="/admin/pedidos" @onclick="ToggleAdminMenu"
-                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <NavLink href="/admin/pedidos" @onclick="ToggleAdminMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 Administrar Pedidos
                             </NavLink>
                         </div>
@@ -104,6 +109,12 @@
                 <NavLink href="/productos" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Productos</NavLink>
                 <NavLink href="/nosotros" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Nosotros</NavLink>
                 <NavLink href="/contacto" @onclick="ToggleMobileMenu" class="text-gray-700 hover:text-green-600 transition-colors">Contacto</NavLink>
+                <div class="relative w-full px-4">
+                    <input type="text" @bind="searchTerm" @onkeyup="HandleSearch"
+                           class="w-full pl-10 pr-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="Buscar..." />
+                    <i class="fas fa-search absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
             </div>
         </div>
     }
@@ -145,15 +156,13 @@
 
 @code {
     private bool showMobileMenu = false;
-    private bool showAdminMenu = false; // Agregado para el menú de admin
-    private int cartCount = 0; // Propiedad para el contador del carrito
+    private bool showAdminMenu = false;
+    private int cartCount = 0;
+    private string searchTerm = string.Empty;
 
     protected override void OnInitialized()
     {
-        // En una aplicación real, aquí obtendrías el número de artículos del carrito
-        // desde un servicio de estado o una base de datos.
-        // Por ejemplo: cartCount = CarritoService.GetItemsCount();
-        cartCount = 3; // Valor de ejemplo para mostrar la funcionalidad
+        cartCount = 3;
     }
 
     private void ToggleMobileMenu()
@@ -161,9 +170,42 @@
         showMobileMenu = !showMobileMenu;
     }
 
-    // Método agregado para el menú de administrador
     private void ToggleAdminMenu()
     {
         showAdminMenu = !showAdminMenu;
+    }
+
+    private async Task HandleSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+    }
+
+    private async Task PerformSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            // Intenta encontrar una coincidencia exacta por nombre
+            var productoEncontrado = await ProductosService.GetProductoByNombreAsync(searchTerm);
+
+            if (productoEncontrado != null)
+            {
+                // Si hay una coincidencia exacta, redirige a la página de detalles del producto
+                NavManager.NavigateTo($"/producto/{productoEncontrado.ProductoId}");
+            }
+            else
+            {
+                // Si no hay una coincidencia exacta, redirige a la página de productos con el filtro
+                NavManager.NavigateTo($"/productos?q={searchTerm}");
+            }
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+        NavManager.NavigateTo("/productos");
     }
 }

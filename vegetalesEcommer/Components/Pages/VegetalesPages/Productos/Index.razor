@@ -1,15 +1,17 @@
 ﻿@page "/Productos"
+@page "/Productos/{searchTerm}"
+
 @using System.ComponentModel.DataAnnotations
 @using System.Linq
-@using Proyecto_Final1.Data 
-@using Proyecto_Final1.Productos 
-@using Proyecto_Final1.Services 
-@using Microsoft.EntityFrameworkCore 
-@using Microsoft.AspNetCore.Authorization 
+@using Proyecto_Final1.Data
+@using Proyecto_Final1.Productos
+@using Proyecto_Final1.Services
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
 @inject NavigationManager NavigationManager
 @inject CartService CartService
-@inject ApplicationDbContext DbContext // Inyectamos el DbContext
-@inject ILogger<Index> Logger 
+@inject ApplicationDbContext DbContext
+@inject ILogger<Producto> Logger
 @implements IDisposable
 
 <PageTitle>Nuestros Productos - Mercado Orgánico</PageTitle>
@@ -20,7 +22,16 @@
             <i class="fas fa-leaf text-4xl text-green-600"></i>
             <span class="text-2xl font-bold text-green-700">Mercado Orgánico</span>
         </div>
-        <h2 class="text-3xl font-extrabold text-gray-900">Productos Frescos de Temporada</h2>
+        <h2 class="text-3xl font-extrabold text-gray-900">
+            @if (!string.IsNullOrEmpty(SearchTerm))
+            {
+                <p>Resultados de la búsqueda para: "@SearchTerm"</p>
+            }
+            else
+            {
+                <p>Productos Frescos de Temporada</p>
+            }
+        </h2>
         <p class="mt-2 text-sm text-gray-600">
             Descubre nuestra selección de productos orgánicos y de alta calidad.
         </p>
@@ -34,57 +45,97 @@
         </div>
     }
 
-    <div class="max-w-6xl w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        @foreach (var product in products)
-        {
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl flex flex-col">
-                <div class="relative">
-                    <img src="@product.ImagenUrl" alt="@product.Nombre" class="w-full h-48 object-cover" />
-                    <span class="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">@product.Precio.ToString("C")</span>
-
-                    
-                    <AuthorizeView Roles="Admin">
-                        <Authorized>
-                            <button @onclick="() => NavigateToEditProduct(product.ProductoId)"
-                                    class="absolute top-2 left-2 p-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 transition"
-                                    title="Editar Producto">
-                                <i class="fas fa-edit text-lg"></i> 
-                            </button>
-                        </Authorized>
-                    </AuthorizeView>
+    <div class="max-w-6xl w-full flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0">
+        <div class="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-start">
+            <button @onclick="ToggleDateFilter" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-medium bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                Filtrar por Fecha
+            </button>
+            @if (showDateFilter)
+            {
+                <div class="flex items-center space-x-4">
+                    <label for="start-date" class="text-gray-700 font-medium">Desde:</label>
+                    <input type="date" @bind="startDate" @bind:event="onchange"
+                           class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 w-40">
+                    <label for="end-date" class="text-gray-700 font-medium">Hasta:</label>
+                    <input type="date" @bind="endDate" @bind:event="onchange"
+                           class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 w-40">
                 </div>
+            }
+        </div>
 
-                <div class="p-6 flex flex-col flex-grow">
-                    <h3 class="text-lg font-bold text-gray-900">@product.Nombre</h3>
-                    <p class="mt-2 text-sm text-gray-600 flex-grow">@product.Descripcion</p>
+        <div class="relative inline-block text-left w-full sm:w-auto text-center sm:text-right">
+            <label for="sort-by" class="mr-2 text-gray-700 font-medium">Ordenar por:</label>
+            <select id="sort-by" @onchange="OnSortOptionChanged" class="inline-flex justify-center w-40 rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <option value="Recientes" selected="@(selectedSortOption == "Recientes")">Más Recientes</option>
+                <option value="MasBaratos" selected="@(selectedSortOption == "MasBaratos")">Más Baratos</option>
+                <option value="MasCaros" selected="@(selectedSortOption == "MasCaros")">Más Caros</option>
+                <option value="Alfabeticamente" selected="@(selectedSortOption == "Alfabeticamente")">Nombre (A-Z)</option>
+            </select>
+        </div>
+    </div>
 
-                    <div class="mt-4 flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <button @onclick="() => DecreaseQuantity(product.ProductoId)"
-                                    class="p-2 border border-green-300 rounded-md text-green-600 hover:bg-green-50 transition">
-                                <i class="fas fa-minus text-sm"></i>
-                            </button>
-                            <span class="w-8 text-center font-bold text-gray-800">@GetQuantity(product.ProductoId)</span>
-                            <button @onclick="() => IncreaseQuantity(product.ProductoId)"
-                                    class="p-2 border border-green-300 rounded-md text-green-600 hover:bg-green-50 transition">
-                                <i class="fas fa-plus text-sm"></i>
-                            </button>
+    @if (products == null)
+    {
+        <p class="text-center text-gray-500">Cargando productos...</p>
+    }
+    else if (products.Any())
+    {
+        <div class="max-w-6xl w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            @foreach (var product in products)
+            {
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl flex flex-col">
+                    <div class="relative">
+                        <img src="@product.ImagenUrl" alt="@product.Nombre" class="w-full h-48 object-cover" />
+                        <span class="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">@product.Precio.ToString("C")</span>
+
+                        <AuthorizeView Roles="Admin">
+                            <Authorized>
+                                <button @onclick="() => NavigateToEditProduct(product.ProductoId)"
+                                        class="absolute top-2 left-2 p-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 transition"
+                                        title="Editar Producto">
+                                    <i class="fas fa-edit text-lg"></i>
+                                </button>
+                            </Authorized>
+                        </AuthorizeView>
+                    </div>
+
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-lg font-bold text-gray-900">@product.Nombre</h3>
+                        <p class="mt-2 text-sm text-gray-600 flex-grow">@product.Descripcion</p>
+
+                        <div class="mt-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <button @onclick="() => DecreaseQuantity(product.ProductoId)"
+                                        class="p-2 border border-green-300 rounded-md text-green-600 hover:bg-green-50 transition">
+                                    <i class="fas fa-minus text-sm"></i>
+                                </button>
+                                <span class="w-8 text-center font-bold text-gray-800">@GetQuantity(product.ProductoId)</span>
+                                <button @onclick="() => IncreaseQuantity(product.ProductoId)"
+                                        class="p-2 border border-green-300 rounded-md text-green-600 hover:bg-green-50 transition">
+                                    <i class="fas fa-plus text-sm"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="p-6 pt-0">
-                    <button @onclick="() => AddToCart(product.ProductoId)"
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
-                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="fas fa-cart-plus text-green-500 group-hover:text-green-400"></i>
-                        </span>
-                        Agregar al Carrito
-                    </button>
+                    <div class="p-6 pt-0">
+                        <button @onclick="() => AddToCart(product.ProductoId)"
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105">
+                            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                <i class="fas fa-cart-plus text-green-500 group-hover:text-green-400"></i>
+                            </span>
+                            Agregar al Carrito
+                        </button>
+                    </div>
                 </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-center text-gray-500 text-lg">No se encontraron productos que coincidan con la búsqueda. 😔</p>
+    }
 
     <a href="/Carrito" class="fixed bottom-8 right-8 bg-green-600 text-white p-4 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-110">
         <i class="fas fa-shopping-cart text-2xl"></i>
@@ -100,25 +151,99 @@
     private int cartCount => CartService.GetCartCount();
     private Dictionary<int, int> quantities = new Dictionary<int, int>();
     private string? addToCartMessage;
+    private string? selectedSortOption = "Recientes";
 
-    protected override async Task OnInitializedAsync()
+    private bool showDateFilter = false;
+    private DateTime? startDate;
+    private DateTime? endDate;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? SearchTerm { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
     {
         try
         {
-            products = await DbContext.Productos.ToListAsync();
+            IQueryable<Proyecto_Final1.Productos.Producto> query = DbContext.Productos;
+
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                query = query.Where(p => p.Nombre.Contains(SearchTerm) ||
+                                         p.Descripcion.Contains(SearchTerm) ||
+                                         p.Categoria.Contains(SearchTerm));
+            }
+
+            // Aplicar filtro por rango de fecha solo si el filtro está visible
+            if (showDateFilter)
+            {
+                if (startDate.HasValue)
+                {
+                    query = query.Where(p => p.FechaDeCreacion >= startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    query = query.Where(p => p.FechaDeCreacion <= endDate.Value.AddDays(1).AddTicks(-1));
+                }
+            }
+
+            // Aplicar ordenamiento
+            switch (selectedSortOption)
+            {
+                case "Recientes":
+                    query = query.OrderByDescending(p => p.FechaDeCreacion);
+                    break;
+                case "MasBaratos":
+                    query = query.OrderBy(p => p.Precio);
+                    break;
+                case "MasCaros":
+                    query = query.OrderByDescending(p => p.Precio);
+                    break;
+                case "Alfabeticamente":
+                    query = query.OrderBy(p => p.Nombre);
+                    break;
+                default:
+                    query = query.OrderByDescending(p => p.FechaDeCreacion);
+                    break;
+            }
+
+            products = await query.ToListAsync();
+
             Logger.LogInformation("Productos cargados desde la base de datos. Cantidad: {Count}", products.Count);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error al cargar productos desde la base de datos.");
-            
         }
 
-        CartService.OnChange += StateHasChanged;
-        foreach (var product in products)
+        if (!quantities.Any())
         {
-            quantities[product.ProductoId] = 1;
+            foreach (var product in products)
+            {
+                quantities[product.ProductoId] = 1;
+            }
         }
+        else
+        {
+            var newQuantities = new Dictionary<int, int>();
+            foreach (var product in products)
+            {
+                newQuantities[product.ProductoId] = quantities.ContainsKey(product.ProductoId) ? quantities[product.ProductoId] : 1;
+            }
+            quantities = newQuantities;
+        }
+
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        CartService.OnChange += StateHasChanged;
     }
 
     private int GetQuantity(int productId)
@@ -177,6 +302,24 @@
     private void NavigateToEditProduct(int productId)
     {
         NavigationManager.NavigateTo($"/EditarProducto/{productId}");
+    }
+
+    private async Task OnSortOptionChanged(ChangeEventArgs e)
+    {
+        selectedSortOption = e.Value.ToString();
+        await LoadProducts();
+    }
+
+    private void ToggleDateFilter()
+    {
+        showDateFilter = !showDateFilter;
+        // Reiniciar las fechas cuando el filtro se oculta para evitar resultados inesperados.
+        if (!showDateFilter)
+        {
+            startDate = null;
+            endDate = null;
+            LoadProducts(); // Recargar los productos sin filtro de fecha
+        }
     }
 
     public void Dispose()
