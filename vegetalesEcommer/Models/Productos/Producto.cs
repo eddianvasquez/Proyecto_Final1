@@ -19,8 +19,6 @@ namespace Proyecto_Final1.Productos
         [Required(ErrorMessage = "El precio es obligatorio.")]
         [Range(0.01, double.MaxValue, ErrorMessage = "El precio debe ser mayor que cero.")]
         public decimal Precio { get; set; }
-
-       
         public string ImagenUrl { get; set; } = string.Empty; 
 
         [Required(ErrorMessage = "El stock es obligatorio.")]
